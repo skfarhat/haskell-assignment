@@ -55,7 +55,7 @@ need consider only piles L, H and G.
 We therefore model the state of the simulation by the datatype State:
 
 > data State = Pair Int Int | Triple Int Int Int
-> 	deriving (Eq, Show)
+>   deriving (Eq, Show)
 
 A state Pair u g represents there being u coins in pile U and g coins in pile G (and
 piles L and H being empty). A state Triple l h g represents there being l coins in
@@ -68,7 +68,7 @@ group of k coins against another group of k coins. Because there are two kinds o
 state, there are two kinds of test:
 
 > data Test = TPair (Int, Int) (Int, Int) | TTrip (Int, Int, Int) (Int, Int, Int)
-> 		deriving (Eq, Show)
+>     deriving (Eq, Show)
 
 SAMI: I'm curious as to why we can't use 'Pair' and 'Triple' types as part of the signatures
 of Test. Check if that works, and consider suggesting it in the assignment.
@@ -90,8 +90,8 @@ piles for the test (you can’t use 7 coins from pile U when there are only 5 co
 left in it).
 
 The below validTest function returns True if the provided Test type satisfies all below:
-	- all of its elements are positive
-	- the sum of elements on the right of the scale is equal to the that of the elements on the left of the scale
+  - all of its elements are positive
+  - the sum of elements on the right of the scale is equal to the that of the elements on the left of the scale
 
 > countState (Pair a b) = sum [a,b]
 > countState (Triple a b c) = sum [a,b,c]
@@ -103,7 +103,7 @@ The below validTest function returns True if the provided Test type satisfies al
 > validTest (TTrip (a,b,c) (d,e,f)) = sum [a, b, c] == sum [d, e, f] && all (>=0) [a, b, c, d, e, f]
 
 The below validState function returns True if the provided State type satisfies all below:
-	- all buckets have non-negative number of coins
+  - all buckets have non-negative number of coins
 
 > validState :: State -> Bool
 > validState (Pair u g) = all (>=0) [u, g]
@@ -202,7 +202,18 @@ TPair (1, 0) (1, 0), TPair (1, 1) (2, 0)]
 > weighings :: State -> [Test]
 > weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], 2*a+b<=u]
 >     where
->       m = u `div` 2
+>           m = u `div` 2
+> weighings (Triple l h g) = [TTrip (a,b,c) (d,e,f)
+>                                   | k       <- [1..krange],
+>                                     (a,b,c) <- choices k (l, h, g),
+>                                     (d,e,f) <- choices k (l, h, g),
+>                                     b + e <= h, c + f <= g,
+>                                     a + d <= l,
+>                                     a + b + c == d + e + f, c * f == 0,
+>                                     show (a,b,c) < show (d,e,f)]
+>
+>     where
+>           krange = (l+h+g) `div` 2
 
 ANSWER:
 -------
@@ -214,50 +225,34 @@ Hence d == 0.
 
 4. The Triple case is a bit trickier. One approach is to define a subsidiary func-
 tion choices such that choices k (l, h, g) returns all valid selections (i, j, k−i−j)
-of k coins. That means 0 6 i 6 l, 0 6 j 6 h, and 0 6 k − i − j 6 g.
+of k coins. That means 0 <= i <= l, 0 <= j <= h, and 0 <= k − i − j <= g.
 choices :: Int → (Int, Int, Int) → [(Int, Int, Int)]
 For example:
 ∗i choices 3 (2, 2, 2)
 [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 1, 1), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
 Define choices.
 
+> choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
+> choices k (l, h, g) = [(i,j,k-i-j) | i <- [0..l], j <- [0..h], (k-i-j) <= g && (k-i-j) >= 0]
+
 5. Now, in a state Triple l h g, we want to generate tests TTrip (a, b, c) (d, e, f )
 such that:
-a + b + c
- = d + e + f
-a + b + c
- > 0
-c × f
- = 0
-a + d
- 6 l
-b + e
- 6 h
-c + f
- 6 g
-(a, b, c)
- 6 (d, e, f )
---
- same number of coins per pan
---
- no point in weighing only air
---
- don’t put genuine coins in both pans
---
- enough light coins
---
- enough heavy coins
---
- enough genuine coins
---
- symmetry breaker
+a + b + c = d + e + f       same number of coins per pan
+a + b + c > 0               no point in weighing only air
+c × f = 0                   don’t put genuine coins in both pans
+a + d <= l                  enough light coins
+b + e <= h                  enough heavy coins
+c + f <= g                  enough genuine coins
+(a, b, c) <= (d, e, f )     symmetry breaker
+
 We use choices to pick valid numbers of coin for each pan; suitable values
 of k range from 1 to (l + h + g) ‘div‘ 2 (we have to have at least one coin in
 each pan, and can’t have more than half the coins). Then for each suitable
 k, we choose k coins (a, b, c) from (l, h, g) for the left pan, another k coins
 (d, e, f ) from what’s left for the right pan, and make sure that c × f = 0 and
-(a, b, c) 6 (d, e, f ). Hence complete the Triple clause of weighings:
+(a, b, c) <= (d, e, f ). Hence complete the Triple clause of weighings:
 weighings (Triple l h g) = [TTrip (a, b, c) (d, e, f ) | ...]
+
 
 6. Now for the third criterion, about making progress. We model this in terms
 of a special-purpose ordering on states: s <s0 when state s gives strictly more
@@ -269,7 +264,10 @@ say that a Triple state always gives more information than a Pair state (since
 it represents progress, from the first to the second phase), and conversely
 a Pair state never gives more information than a Triple state. Complete the
 definition of the ordering on State.
-instance Ord State where ...
+
+> instance Ord State where ...
+
+
 7. Define a predicate productive on states and tests such that productive s t
 determines whether test t is guaranteed to make progress in state s, i.e.
 every possible outcome is a state providing more information according to
