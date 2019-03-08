@@ -265,7 +265,13 @@ it represents progress, from the first to the second phase), and conversely
 a Pair state never gives more information than a Triple state. Complete the
 definition of the ordering on State.
 
-> instance Ord State where ...
+TODO: check if there is a neater way to do the below:
+
+> instance Ord State where
+>         compare (Pair _ _) (Triple _ _ _) = GT
+>         compare (Triple _ _ _) (Pair _ _) = LT
+>         compare (Pair _ g1) (Pair _ g2) = compare g2 g1
+>         compare (Triple _ _ g1) (Triple _ _ g2) = compare g2 g1
 
 
 7. Define a predicate productive on states and tests such that productive s t
