@@ -1,3 +1,6 @@
+> import Data.List (minimumBy)
+> import Data.List (elemIndex) -- imported by non-essential functions
+
 1 Introduction
 ===============
 
@@ -41,16 +44,18 @@ pile G. So if piles L and H are both empty, then all the coins are genuine; othe
 one of those piles is empty, the other has precisely one coin, that coin is fake, and
 which pile it is in tells you whether it is light or heavy. The challenge now is to
 find the best way of getting from the initial state to a final state.
+
 However, we can be a bit more precise than just saying that there are four piles,
 some empty, because the physical solution will go through two distinct phases. In
 the first phase, we don’t know whether any coin is fake; it turns out that we need
-consider only piles U and G. Initially, all coins are in U. If the two groups balance
-the scales, we move 2k coins from pile U to pile G and continue. If the two groups
-don’t balance, then one of those 2k coins must be fake; we move the k coins on
-the lighter pan of the scales to pile L, the k coins on the heavier pan to pile H,
-and all the remaining coins in pile U to pile G. We are now in the second phase,
-knowing that there is a fake coin; from this point, pile U remains empty, and we
-need consider only piles L, H and G.
+consider only piles U and G. 
+
+Initially, all coins are in U. If the two groups balance the scales, we move 2k coins 
+from pile U to pile G and continue. If the two groups don’t balance, then one of those 
+2k coins must be fake; we move the k coins on the lighter pan of the scales to pile L, 
+the k coins on the heavier pan to pile H, and all the remaining coins in pile U to pile G. 
+We are now in the second phase, knowing that there is a fake coin; from this point, pile 
+U remains empty, and we need consider only piles L, H and G.
 
 We therefore model the state of the simulation by the datatype State:
 
@@ -143,10 +148,22 @@ all genuine; so we move all 6 to pile G, and end up in state Pair 6 6.
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >       | valid (Pair u g) (TPair (a,b) (c,d)) = [Triple a c (b+d+g+u-a-c), Pair (u-a-c) (g-b-d), Triple c a (b+d+g+u-a-c)]
 >       | otherwise = []
+> outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
+> 		| valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [		Triple (l'+a) (h'+e) 	(g'+b+c+d+f),		-- left < right
+>																Triple (l'  ) (h')		(g'+a+b+c+d+e+f), 	-- left == right
+>																Triple (l'+d) (h'+b)	(g'+a+c+e+f)		-- left > right
+> 															]
+> 		| otherwise = []
+> 		where
+> 			l' = l - a - d
+> 			h' = h - b - e
+> 			g' = g - c - f
 
-TODO: We need to do this for TTrip tests and Triple states. But I don't know what kind of tests
-are run on Triple state, so I'll wait to do the rest and come back to fix this.
-$ outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f)) =
+For the Triple case, either
+
+left < right: 										[ Triple (l' + a, 	h' + e, 	g' + (c+f)) ]
+right > left: 										[ Triple (l' + d, 	h' + b, 	g' + (c+f)) ]
+left = right: all move to genuine 					[ Triple (l', 		h', 		g' + (a+d+b+e+c+f)) ]
 
 to compute the three outcomes of a valid test. For example,
 outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
@@ -199,21 +216,33 @@ For example,
 [TPair (0, 1) (1, 0), TPair (0, 2) (2, 0), TPair (0, 3) (3, 0),
 TPair (1, 0) (1, 0), TPair (1, 1) (2, 0)]
 
+TODO: Explain the 2*a+b <= u is (a+c) <= u and the c=a+b.
+
 > weighings :: State -> [Test]
-> weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], 2*a+b<=u]
+> -- weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], a+b /= 0]
+> weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], a+b /= 0, 2*a + b <= u]
 >     where
 >           m = u `div` 2
 > weighings (Triple l h g) = [TTrip (a,b,c) (d,e,f)
 >                                   | k       <- [1..krange],
 >                                     (a,b,c) <- choices k (l, h, g),
 >                                     (d,e,f) <- choices k (l, h, g),
->                                     b + e <= h, c + f <= g,
->                                     a + d <= l,
->                                     a + b + c == d + e + f, c * f == 0,
->                                     show (a,b,c) < show (d,e,f)]
+>                                      b + e <= h,
+>  									   c + f <= g,
+>                                      a + d <= l,
+>                                      a + b + c == d + e + f,
+>  									   c * f == 0,
+>                                      show (a,b,c) <= show (d,e,f)
+> 								]
 >
 >     where
 >           krange = (l+h+g) `div` 2
+
+
+> weighings' :: State -> [Test]
+> weighings' (Triple l h g) = [TTrip (k,k,k) (k,k,k) | k <- [1..krange]]
+> 		where
+> 			krange = (l + h + g) `div` 2
 
 ANSWER:
 -------
@@ -268,23 +297,34 @@ definition of the ordering on State.
 TODO: check if there is a neater way to do the below:
 
 > instance Ord State where
->         compare (Pair _ _) (Triple _ _ _) = GT
->         compare (Triple _ _ _) (Pair _ _) = LT
->         compare (Pair _ g1) (Pair _ g2) = compare g2 g1
->         compare (Triple _ _ g1) (Triple _ _ g2) = compare g2 g1
+>         compare (Pair _ _) (Triple _ _ _) 		= GT
+>         compare (Triple _ _ _) (Pair _ _) 		= LT
+>         compare (Pair _ g1) (Pair _ g2) 			= compare g2 g1
+>         compare (Triple _ _ g1) (Triple _ _ g2) 	= compare g2 g1
 
 
 7. Define a predicate productive on states and tests such that productive s t
 determines whether test t is guaranteed to make progress in state s, i.e.
 every possible outcome is a state providing more information according to
 the ordering above.
-productive :: State → Test → Bool
+
+> productive :: State -> Test -> Bool
+> productive s t = all (<s) $ outcomes s t
+
 In particular, productive (Triple 3 0 6) (TTrip (0, 0, 3) (3, 0, 0) = False, as we
 saw above.
 
 8. Finally, we fulfill the third criterion by keeping only the productive tests
 among the possible weighings; define the function tests to do this.
-tests :: State → [Test ]
+
+> tests :: State -> [Test]
+> tests s = filter (\w -> productive s w) $ weighings s
+
+We can also define tests using list comprehension as below:
+
+tests :: State -> [Test]
+tests s = [ w | w <- weighings s, productive s w]
+
 For example, state Triple 3 0 6 admits 5 weighings, but one of these is
 TTrip (0, 0, 3) (3, 0, 0), which is unproductive, so tests returns only 4 produc-
 tive weighings.
@@ -294,8 +334,10 @@ tive weighings.
 Now we can set about running the simulation of the weighing process. From a
 given start State, we build a decision tree of Tests, with final States at the leaves.
 This is the type of tree we will start with:
-data Tree = Stop State | Node Test [Tree]
-deriving Show
+
+> data Tree = Stop State | Node Test [Tree]
+> 		deriving Show
+
 Each Node will have precisely three children, for the three possible outcomes of
 that test. We want to build a tree of minimum height—that is, which minimizes
 the length of the longest path from the root to any leaf—because that minimizes
@@ -314,18 +356,89 @@ coins could be light, or heavy, or they could all be genuine), and a ternary tre
 height k has at most 3k leaves.
 
 9. Define a predicate
-final :: State → Bool
+
+We could have defined final to just check u == 0 and assuming the function was called in a
+valid state based on our definition (n>2) then all would be fine. But I believe it is more
+correct to return 'false' if we are given `final (State 0 0)` or `final (State 0 1)`.
+
+
+Looking at the tree, it is clear that a leaf State if:
+	1) when it is Pair, u=0 and g=n
+	2) when it is a Triple, (l=0 and h=1) or (l=1 and h=0) and g=(n-1)
+
+The function is defined such that it has no context as to how many coins there are overall, so we cannot check
+on the values of g to see that they are equal to n-1 or n.
+
+TODO: Similarly with the Triple case, we cannot identify the counterfeit coin with only two, so we check the total number of coins.
+TODO: Check if we want to make checks on the provided states before answering 'final'
+
+> final :: State -> Bool
+> final (Pair u g) 		= u == 0
+> final (Triple l h g) 	= (l + h == 1) && (l * h == 0)
+
+TODO: rephrase below.
+We can make more checks on the value of g so that we reject
+We could have defined final to just check u == 0 and assuming the function was called in a
+valid state based on our definition (n>2) then all would be fine. But I believe it is more
+correct to return 'false' if we are given `final (State 0 0)` or `final (State 0 1)`.
+
+final (Pair u g) 		= g > 1 && u == 0
+final (Triple l h g) 	= g > 1 && (l + h == 1) && (l * h == 0)
+
 to determine whether a State is final—that is, whether it has determined
 either that all coins or genuine, or that one coin is fake, and in the latter case
 which coin and whether it is light or heavy.
+
 10. Define a function
-height :: Tree → Int
+
+data Tree = Stop State | Node Test [Tree]
+	deriving Show
+
+
+> height :: Tree -> Int
+> height (Stop _) = 0
+> height (Node test nodes) = 1 + (maximum $ map height nodes)
+
 to compute the height of a tree (such that the tree above has height 3).
+
+TEST
+----
+
+Below is a test of the tree presented in the assignment.
+
+> mrr = Node (TTrip (1,0,0) (1,0,0)) [Stop (Triple 1 0 7), Stop (Triple 0 1 7), Stop (Triple 1 0 7)]
+> rr = Node (TTrip (0,0,1) (0,1,0)) [Stop (Triple 0 1 7), mrr, Stop (Triple 0 0 0)]
+> rmr = Node (TTrip (1,0,0) (1,0,0)) (replicate 3 (Stop (Triple 1 0 7)))
+> mmr = Node (TPair (0,1) (1,0)) [Stop (Triple 0 1 7), Stop (Pair 0 8), Stop (Triple 1 0 7)]
+> lmr = Node (TTrip (0,1,0) (0,1,0)) (replicate 3 (Stop (Triple 0 1 7)))
+> mr = Node (TPair (3,0) (3,0)) [lmr, mmr, rmr]
+> mlr = Node (TTrip (1,0,0) (1,0,0)) [Stop (Triple 1 0 7), Stop (Triple 0 1 7), Stop (Triple 1 0 7)]
+> lr = Node (TTrip (0,0,1) (0,1,0)) [ Stop (Triple 0 1 7) , mlr, Stop (Triple 0 0 0) ] -- the Triple 0 0 0 means invalid case
+> root = Node (TPair (2,0) (2,0)) [ lr, mr ]
+> testHeight = height root
+
+
+
 11. Define a function
-minHeight :: [Tree] → Tree
+
+> minHeight :: [Tree] -> Tree
+> minHeight trees = minimumBy compareTrees trees
+> 		where
+> 			compareTrees x y = (height x) `compare` (height y)
+
+An alternative definition (TODO: check why elemIndex is failing)
+
+> -- minHeight' :: [Tree] -> Tree
+> -- minHeight' trees = trees !! elemIndex smallest
+> -- 		where smallest = minimum $ map height trees
+
 that returns the tree of minimum height from a non-empty list of trees.
+
 12. Hence define a function
-mktree :: State → Tree
+
+> -- mktree :: State -> Tree
+
+
 to build a minimum-height decision tree of tests from a given start state s:
 Stop if s is final, and otherwise generate all possible productive tests with
 tests s, recursively build trees from the outcomes of each such test, and then
@@ -464,3 +577,21 @@ companying techniques to a particular case study?
 sions and discussing trade-offs, concisely and precisely?
 • how fluent is your expression in Haskell, and how elegant is the resulting
 code?
+
+
+
+Solution
+The puzzle can be solved in two weighings.Start by taking aside one coin if n is odd and two coins if n is even. After that,
+divide the remaining even number of coins into two equal-size groups and put them on the opposite pans of the scale. If they weigh the same,
+ all these coins are genuine and the fake coin is among the coins set aside. So we can weigh the set-aside group of one or two coins against the same
+ number of genuine coins: if the former weighs less,
+ the fake coin is lighter; otherwise,
+ it is heavier.If the first weighing does not result in a balance,
+ take the lighter group and,
+ if the number of coins in it is odd,
+ add to it one of the coins initially set aside (which must be genuine). Divide all these coins into two equal-size groups and weigh them.If they weigh the same,
+ all these coins are genuine and therefore the fake coin is heavier; otherwise,
+ they contain the fake,
+ which is lighter.Since the puzzle cannot,
+ obviously,
+ be solved in one weighing, the above algorithm solves it in the minimum possible number of weighings.
