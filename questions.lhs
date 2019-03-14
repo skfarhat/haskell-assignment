@@ -1,5 +1,6 @@
 > import Data.List (minimumBy)
 > import Data.List (elemIndex) -- imported by non-essential functions
+> import Debug.Trace
 
 1 Introduction
 ===============
@@ -15,6 +16,7 @@ genuine and, if not, to find the fake coin and to establish whether it is
 lighter or heavier than the genuine ones. Design an algorithm to solve
 the problem, in the minimum number of weighings.
 Of course, with n = 0 there are no coins; with n = 1 you can’t weigh anything; and
+
 with n = 2 you couldn’t distinguish a fake coin from a genuine one. So we assume
 n > 2; the problem is usually presented with n = 12.
 According to Algorithmic Puzzles, the puzzle first appeared in 1945, and it
@@ -48,13 +50,13 @@ find the best way of getting from the initial state to a final state.
 However, we can be a bit more precise than just saying that there are four piles,
 some empty, because the physical solution will go through two distinct phases. In
 the first phase, we don’t know whether any coin is fake; it turns out that we need
-consider only piles U and G. 
+consider only piles U and G.
 
-Initially, all coins are in U. If the two groups balance the scales, we move 2k coins 
-from pile U to pile G and continue. If the two groups don’t balance, then one of those 
-2k coins must be fake; we move the k coins on the lighter pan of the scales to pile L, 
-the k coins on the heavier pan to pile H, and all the remaining coins in pile U to pile G. 
-We are now in the second phase, knowing that there is a fake coin; from this point, pile 
+Initially, all coins are in U. If the two groups balance the scales, we move 2k coins
+from pile U to pile G and continue. If the two groups don’t balance, then one of those
+2k coins must be fake; we move the k coins on the lighter pan of the scales to pile L,
+the k coins on the heavier pan to pile H, and all the remaining coins in pile U to pile G.
+We are now in the second phase, knowing that there is a fake coin; from this point, pile
 U remains empty, and we need consider only piles L, H and G.
 
 We therefore model the state of the simulation by the datatype State:
@@ -146,8 +148,15 @@ all genuine; so we move all 6 to pile G, and end up in state Pair 6 6.
 
 > outcomes :: State -> Test -> [State]
 > outcomes (Pair u g) (TPair (a,b) (c,d))
->       | valid (Pair u g) (TPair (a,b) (c,d)) = [Triple a c (b+d+g+u-a-c), Pair (u-a-c) (g-b-d), Triple c a (b+d+g+u-a-c)]
+>       | valid (Pair u g) (TPair (a,b) (c,d)) = [
+> 													Triple a c (g+gs+u-us),
+> 													Pair (u-us) (g+us+gs),
+> 													Triple c a (g+gs+u-us)
+> 												 ]
 >       | otherwise = []
+> 		where
+> 				us = a + c
+> 				gs = b + d
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 > 		| valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [		Triple (l'+a) (h'+e) 	(g'+b+c+d+f),		-- left < right
 >																Triple (l'  ) (h')		(g'+a+b+c+d+e+f), 	-- left == right
@@ -219,7 +228,6 @@ TPair (1, 0) (1, 0), TPair (1, 1) (2, 0)]
 TODO: Explain the 2*a+b <= u is (a+c) <= u and the c=a+b.
 
 > weighings :: State -> [Test]
-> -- weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], a+b /= 0]
 > weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], a+b /= 0, 2*a + b <= u]
 >     where
 >           m = u `div` 2
@@ -374,7 +382,10 @@ TODO: Check if we want to make checks on the provided states before answering 'f
 
 > final :: State -> Bool
 > final (Pair u g) 		= u == 0
-> final (Triple l h g) 	= (l + h == 1) && (l * h == 0)
+> final (Triple l h g) 	= foundSingleFake || allGenuine
+> 			where
+> 				foundSingleFake = (l + h == 1) && (l * h == 0)
+> 				allGenuine = l == 0 && h == 0 && g /= 0
 
 TODO: rephrase below.
 We can make more checks on the value of g so that we reject
@@ -397,7 +408,7 @@ data Tree = Stop State | Node Test [Tree]
 
 > height :: Tree -> Int
 > height (Stop _) = 0
-> height (Node test nodes) = 1 + (maximum $ map height nodes)
+> height (Node _ nodes) = 1 + (maximum $ map height nodes)
 
 to compute the height of a tree (such that the tree above has height 3).
 
@@ -436,7 +447,42 @@ that returns the tree of minimum height from a non-empty list of trees.
 
 12. Hence define a function
 
-> -- mktree :: State -> Tree
+> s1 = Pair 12 0
+> tt = tests s1
+> newTrees t = map mktree $ outcomes s1 t
+> f1 t = (Node t $ newTrees t)
+
+> minHeightOrMe :: Tree -> [Tree] -> Tree
+> minHeightOrMe t [] = t
+> minHeightOrMe _ s = minHeight s
+
+Used for debugging
+
+> mktree' :: State -> Tree
+> mktree' s
+> 		| final s 	= Stop s
+> 		| otherwise = (traceIt s) $ (minHeight $ map (\t -> (Node t $ newTrees t)) allTests)
+> 			where
+> 				allTests = tests s
+> 				newTrees t = map mktree' $ outcomes s t
+> 				traceIt s = trace ("--> " ++ show s ++ "\n=================\n")
+> 				-- newTrees ::  State -> Test -> [Tree]
+
+One that is cleaner:
+
+> mktree :: State -> Tree
+> mktree s
+> 		| final s = Stop s
+> 		| otherwise = minHeight $ map testToTree allTests
+> 			where
+> 				allTests = tests s
+> 				testToTree t = Node t $ map mktree $ outcomes s t
+
+To find the minimum tree,
+
+s = Pair 12 0
+t = tests s
+putStr $ (unlines) $ map (show . outcomes s) t
 
 
 to build a minimum-height decision tree of tests from a given start state s:
@@ -595,3 +641,25 @@ divide the remaining even number of coins into two equal-size groups and put the
  which is lighter.Since the puzzle cannot,
  obviously,
  be solved in one weighing, the above algorithm solves it in the minimum possible number of weighings.
+
+
+
+Talking to myself
+
+Thurs 14 March:
+---------------
+
+So the issue I am trying to solve is why (Pair 3 0) has no solution;
+
+> w1 = (Pair 3 0)
+> ww1 = head $ weighings w1
+
+ww1 = TPair (1,0) (1,0)
+
+If I run:
+
+> o1 = outcomes w1 ww1
+
+I get: [Triple 1 1 1,Pair 1 0,Triple 1 1 1]
+
+The first question is, why is that wrong?
