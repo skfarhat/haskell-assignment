@@ -605,6 +605,57 @@ check that they do indeed all have minimum height:
 trees have height 3.) How many minimum-height decision trees are there for
 n = 12?
 
+
+TODO: check if this is meant to be an and or an or
+
+NOTES:
+
+- why is it ab?
+- are we sure ^ = &&
+
+> optimal :: State -> Test -> Bool
+> optimal (Pair u g) (TPair (a, b) (ab, 0))
+>     = (2 * a + b <= p) && (u - 2 * a - b <= q)
+>       where p = 3 ^ (t - 1)
+>             q = (p - 1) `div` 2
+>             t = ceiling (logBase 3 (fromIntegral (2 * u + k)))
+>             k = if g == 0 then 2 else 1
+> optimal (Triple l h g) (TTrip (a, b, c) (d, e, f))
+>     = (a + e) `max` (b + d) `max` (l - a - d + h - b - e) <= p
+>       where p = 3 ^ (t - 1)
+>             t = ceiling (logBase 3 (fromIntegral (l + h)))
+
+NOTE: we changes bestTests to return the optimal tests given we a list
+of tests for a State, not from the weighings as is written in the assignment.
+This is the only way we have found it to work.
+BUG: there's something wrong with bestTests or optimal, or both.
+
+> bestTests :: State -> [Test]
+> bestTests s = filter (\w -> optimal s w) $ tests s
+
+> mktreeG :: State -> TreeH
+> mktreeG s
+>     | final s = StopH s
+>     | otherwise = nodeH optimalTest trees
+>         where
+>           optimalTest = head $ bestTests s
+>           trees = map mktreeG $ outcomes s optimalTest
+>           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
+
+
+TEST:
+------
+
+> s4 = (Triple 2 2 4)
+> w4 = head $ bestTests s4
+> r4 = outcomes s4 w4
+
+
+  traceIt1 s $ testToTree optimalTest
+
+TODO: refactor to have on efunction for the maktee for
+all 3 of them (a parametrized one)
+
 7 Guidance
 ===========
 The purpose of the assignment is for you to demonstrate your understanding of
