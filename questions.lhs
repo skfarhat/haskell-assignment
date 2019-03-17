@@ -660,21 +660,23 @@ code?
 
 
 
+Solution from the book
+-----------------------
+
 Solution
-The puzzle can be solved in two weighings.Start by taking aside one coin if n is odd and two coins if n is even. After that,
-divide the remaining even number of coins into two equal-size groups and put them on the opposite pans of the scale. If they weigh the same,
- all these coins are genuine and the fake coin is among the coins set aside. So we can weigh the set-aside group of one or two coins against the same
- number of genuine coins: if the former weighs less,
- the fake coin is lighter; otherwise,
- it is heavier.If the first weighing does not result in a balance,
- take the lighter group and,
- if the number of coins in it is odd,
- add to it one of the coins initially set aside (which must be genuine). Divide all these coins into two equal-size groups and weigh them.If they weigh the same,
- all these coins are genuine and therefore the fake coin is heavier; otherwise,
- they contain the fake,
- which is lighter.Since the puzzle cannot,
- obviously,
- be solved in one weighing, the above algorithm solves it in the minimum possible number of weighings.
+
+The decision tree in Figure 4.101 presents an algorithm that solvesthe fake-coin puzzle for 12 coins in three weighings.
+In this tree the coins arenumbered from 1 to 12.
+Internal nodes indicate weighings, with the coins beingweighted listed inside the node.
+For example, the root corresponds to the firstweighing in which coins 1, 2, 3, 4 and coins 5, 6, 7, 8 are put on the left and rightpan of the scale,
+ respectively.
+Edges to a node’s children are marked according tothe node’s weighing outcome:<means that the left pan’s weight is smaller thanthat of the right’s pan,
+=means that the weights are equal,
+ and>means that theleft pan’s weight is larger than that of the right pan.
+Leaves indicate final outcomes:=means that all the coins are genuine,
+ and a number followed by+or−meansthat the coin with that number is heavier or lighter, respectively.
+A list above aninternal node indicates the outcomes that are still possible before the weighing indicated inside the node.
+For example, before the first weighing either all the coinsare genuine (=) or each coin is either heavier (+) or lighter (−).
 
 
 
