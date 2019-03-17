@@ -433,9 +433,9 @@ Below is a test of the tree presented in the assignment.
 11. Define a function
 
 > minHeight :: [Tree] -> Tree
-> minHeight trees = minimumBy compareTrees trees
+> minHeight trees = minimumBy treeCmp trees
 > 		where
-> 			compareTrees x y = (height x) `compare` (height y)
+> 			treeCmp t1 t2 = (height t1) `compare` (height t2)
 
 An alternative definition (TODO: check why elemIndex is failing)
 
@@ -457,6 +457,8 @@ that returns the tree of minimum height from a non-empty list of trees.
 > minHeightOrMe _ s = minHeight s
 
 Used for debugging
+
+> traceIt1 s = trace ("--> " ++ show s ++ "\n=================\n")
 
 > mktree' :: State -> Tree
 > mktree' s
@@ -526,6 +528,38 @@ actually save much time:
 (9.34 secs, 3, 648, 121, 496 bytes)
 ∗i mktreeH (Pair 8 0)
 (9.23 secs, 3, 578, 513, 216 bytes)
+
+> data TreeH = StopH State | NodeH Int Test [TreeH]
+>     deriving Show
+
+> heightH :: TreeH -> Int
+> heightH (StopH s) = 0
+> heightH (NodeH h t ts) = h
+
+> treeH2tree :: TreeH -> Tree
+> treeH2tree (StopH s) = Stop s
+> treeH2tree (NodeH h t ts) = Node t (map treeH2tree ts)
+
+> nodeH :: Test -> [TreeH] -> TreeH
+> nodeH t children = NodeH h t children
+>       where
+>         h = 1 + (maximum $ map heightH children)
+
+> tree2treeH :: Tree -> TreeH
+> tree2treeH (Stop s) = StopH s
+> tree2treeH (Node t children) = nodeH t $ map tree2treeH children
+
+TODO: convince yourself that heightH . tree2treeH = height
+
+> mktreeH :: State -> TreeH
+> mktreeH s
+>     | final s = StopH s
+>     | otherwise = traceIt1 s $ minimumBy treeCmp $ map testToTree allTests
+>         where
+>           allTests = tests s
+>           testToTree t = nodeH t (map mktreeH $ outcomes s t)
+>           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
+
 
 6 A greedy solution
 ===================
