@@ -148,20 +148,24 @@ all genuine; so we move all 6 to pile G, and end up in state Pair 6 6.
 
 > outcomes :: State -> Test -> [State]
 > outcomes (Pair u g) (TPair (a,b) (c,d))
->       | valid (Pair u g) (TPair (a,b) (c,d)) = [
-> 													Triple a c (g+gs+u-us),
-> 													Pair (u-us) (g+us+gs),
-> 													Triple c a (g+gs+u-us)
-> 												 ]
+>       | valid (Pair u g) (TPair (a,b) (c,d))
+> 					= [
+>								Triple a c (g+gs+u-us),
+>								Pair (u-us) (g+us+gs),
+>								Triple c a (g+gs+u-us)
+>							]
 >       | otherwise = []
 > 		where
 > 				us = a + c
 > 				gs = b + d
+>
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
-> 		| valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [		Triple (l'+a) (h'+e) 	(g'+b+c+d+f),		-- left < right
->																Triple (l'  ) (h')		(g'+a+b+c+d+e+f), 	-- left == right
->																Triple (l'+d) (h'+b)	(g'+a+c+e+f)		-- left > right
-> 															]
+> 		| valid (Triple l h g) (TTrip (a,b,c) (d,e,f))
+>         = [
+> 							Triple (l'+a) (h'+e) 	(g'+b+c+d+f),		-- left < right
+>               Triple (l'  ) (h')		(g'+a+b+c+d+e+f), 	-- left == right
+>               Triple (l'+d) (h'+b)	(g'+a+c+e+f)		-- left > right
+> 					]
 > 		| otherwise = []
 > 		where
 > 			l' = l - a - d
@@ -236,21 +240,15 @@ TODO: Explain the 2*a+b <= u is (a+c) <= u and the c=a+b.
 >                                     (a,b,c) <- choices k (l, h, g),
 >                                     (d,e,f) <- choices k (l, h, g),
 >                                      b + e <= h,
->  									   c + f <= g,
+>  									                   c + f <= g,
 >                                      a + d <= l,
 >                                      a + b + c == d + e + f,
->  									   c * f == 0,
+>  									                   c * f == 0,
 >                                      show (a,b,c) <= show (d,e,f)
 > 								]
 >
 >     where
 >           krange = (l+h+g) `div` 2
-
-
-> weighings' :: State -> [Test]
-> weighings' (Triple l h g) = [TTrip (k,k,k) (k,k,k) | k <- [1..krange]]
-> 		where
-> 			krange = (l + h + g) `div` 2
 
 ANSWER:
 -------
@@ -551,10 +549,26 @@ actually save much time:
 
 TODO: convince yourself that heightH . tree2treeH = height
 
+> mktreeHTrace :: State -> TreeH
+> mktreeHTrace s
+>     | final s = StopH s
+>     | otherwise = traceIt1 s $ minimumBy treeCmp $ map testToTree allTests
+>         where
+>           allTests = tests s
+>           testToTree t = nodeH t (map mktreeHTrace $ outcomes s t)
+>           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
+
+TODO:
+NOTE: I think this is wrong. we do minimumBy, but these should be the
+children of the papa node.
+
+TODO: minimumBy treeCmp is repeated twice, create a special function
+for it.
+
 > mktreeH :: State -> TreeH
 > mktreeH s
 >     | final s = StopH s
->     | otherwise = traceIt1 s $ minimumBy treeCmp $ map testToTree allTests
+>     | otherwise = minimumBy treeCmp $ map testToTree allTests
 >         where
 >           allTests = tests s
 >           testToTree t = nodeH t (map mktreeH $ outcomes s t)
