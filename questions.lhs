@@ -13,33 +13,19 @@ We therefore model the state of the simulation by the datatype State:
 SAMI: I'm curious as to why we can't use 'Pair' and 'Triple' types as part of the signatures
 of Test. Check if that works, and consider suggesting it in the assignment.
 
-The below validTest function returns True if the provided Test type satisfies all below:
-  - all of its elements are positive
-  - the sum of elements on the right of the scale is equal to the that of the elements on the left of the scale
-
-> countState (Pair a b) = sum [a,b]
-> countState (Triple a b c) = sum [a,b,c]
-> countTest (TPair (a,b) (c,d)) = sum [a,b,c,d]
-> countTest (TTrip (a,b,c) (d,e,f)) = sum [a,b,c,d,e,f]
-
-> validTest :: Test -> Bool
-> validTest (TPair (a,b) (c,d)) = sum [a, b] == sum [c, d] && all (>=0) [a, b, c, d]
-> validTest (TTrip (a,b,c) (d,e,f)) = sum [a, b, c] == sum [d, e, f] && all (>=0) [a, b, c, d, e, f]
-
-The below validState function returns True if the provided State type satisfies all below:
-  - all buckets have non-negative number of coins
-
-> validState :: State -> Bool
-> validState (Pair u g) = all (>=0) [u, g]
-> validState (Triple l g h) = all (>=0) [l, g, h]
-
-1. Define a function to determine whether a given test is valid in a given state, according to the
-above criteria. For example, valid (Pair 12 0) (TPair (3, 0) (3, 0)) = True.
-
 > valid :: State -> Test -> Bool
 > valid (Pair _ _) (TTrip _ _) = False
 > valid (Triple _ _ _) (TPair _ _) = False
-> valid s t  = validState s && validTest t && countTest t <= countState s
+> valid (Pair u g) (TPair (a,b) (c,d)) = allPositive && equalPans && sufficientCoins
+>       where
+>           allPositive = all (>=0) [u,g,a,b,c,d]
+>           equalPans = sum[a,b] == sum[c,d]
+>           sufficientCoins = sum[a,c] <= u && sum[b,d] <= g
+> valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = allPositive && equalPans && sufficientCoins
+>       where
+>           allPositive = all (>=0) [l,h,g,a,b,c,d,e,f]
+>           equalPans = sum[a,b,c] == sum[d,e,f]
+>           sufficientCoins = sum[a,d] <= l && sum[b,e] <= h && sum[c,f] <= g
 
 TODO: do we need an otherwise at the last one above?
 
@@ -48,34 +34,27 @@ TODO: do we need an otherwise at the last one above?
 > outcomes :: State -> Test -> [State]
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >       | valid (Pair u g) (TPair (a,b) (c,d))
-> 					= [
->								Triple a c (g+gs+u-us),
->								Pair (u-us) (g+us+gs),
->								Triple c a (g+gs+u-us)
->							]
+>           = [
+>               Triple  a c (g+u-us),
+>               Pair    (u-us) (g+us),
+>               Triple  c a (g+u-us)
+>             ]
 >       | otherwise = []
-> 		where
-> 				us = a + c
-> 				gs = b + d
+>     where
+>         us = a + c
 >
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
-> 		| valid (Triple l h g) (TTrip (a,b,c) (d,e,f))
+>     | valid (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >         = [
-> 							Triple (l'+a) (h'+e) 	(g'+b+c+d+f),		-- left < right
->               Triple (l'  ) (h')		(g'+a+b+c+d+e+f), 	-- left == right
->               Triple (l'+d) (h'+b)	(g'+a+c+e+f)		-- left > right
-> 					]
-> 		| otherwise = []
-> 		where
-> 			l' = l - a - d
-> 			h' = h - b - e
-> 			g' = g - c - f
+>               Triple a  e  (g+l+h-a-e),
+>               Triple l' h' (g+a+b+d+e),
+>               Triple d  b  (g+l+h-b-d)
+>           ]
+>     | otherwise = []
+>     where
+>       l' = l - a - d
+>       h' = h - b - e
 
-For the Triple case, either
-
-left < right: 										[ Triple (l' + a, 	h' + e, 	g' + (c+f)) ]
-right > left: 										[ Triple (l' + d, 	h' + b, 	g' + (c+f)) ]
-left = right: all move to genuine 					[ Triple (l', 		h', 		g' + (a+d+b+e+c+f)) ]
 
 to compute the three outcomes of a valid test. For example,
 outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
@@ -233,17 +212,17 @@ that returns the tree of minimum height from a non-empty list of trees.
 
 Used for debugging
 
+> traceIt s = trace ("->" ++ show s)
 > traceIt1 s = trace ("--> " ++ show s ++ "\n=================\n")
 
-> mktree' :: State -> Tree
-> mktree' s
-> 		| final s 	= Stop s
-> 		| otherwise = (traceIt s) $ (minHeight $ map (\t -> (Node t $ newTrees t)) allTests)
-> 			where
-> 				allTests = tests s
-> 				newTrees t = map mktree' $ outcomes s t
-> 				traceIt s = trace ("--> " ++ show s ++ "\n=================\n")
-> 				-- newTrees ::  State -> Test -> [Tree]
+> mktreeDebug :: State -> Tree
+> mktreeDebug s
+>     | final s || (length allTests == 0) = Stop s
+>     | otherwise = (traceIt s) $ minHeight $ map testToTree allTests
+>       where
+>         allTests = tests s
+>         testToTree t = Node t $ map mktreeDebug $ outcomes s t
+
 
 One that is cleaner:
 
@@ -316,8 +295,6 @@ for it.
 6 A greedy solution
 ===================
 
-
-
 TODO: check if this is meant to be an and or an or
 NOTES:
 - why is it ab?
@@ -360,13 +337,32 @@ TEST:
 > w4 = head $ bestTests s4
 > r4 = outcomes s4 w4
 
+> choicesTest = choices 3 (2, 2, 2) == [(0,1,2),(0,2,1),(1,0,2),(1,1,1),(1,2,0),(2,0,1),(2,1,0)]
+> weighingsTest1 = 5 == (length $ weighings (Triple 3 0 6))
+> productiveTest = productive (Triple 3 0 6) (TTrip (0, 0, 3) (3, 0, 0)) == False
+> outcomesTest1 = outcomes (Triple 3 0 6) (TTrip (0, 0, 3) (3, 0, 0)) == [Triple 0 0 9,Triple 0 0 9,Triple 3 0 6]
+> outcomesTest2 = outcomes (Pair 12 0) (TPair (3,0) (3,0)) == [Triple 3 3 6,Pair 6 6,Triple 3 3 6]
+> testsTest1 = 4 == (length $ tests(Triple 3 0 6))
 
-  traceIt1 s $ testToTree optimalTest
+==============================================================================
+
+> testResultStr :: [Char] -> Bool -> [Char]
+> testResultStr s b = (if b then  "✅ " ++ s ++ " passed." else "🚫 " ++ s  ++ " failed.") ++ "\n"
+
+> runTests :: IO()
+> runTests = do
+>       putStr (testResultStr "choicesTest    " choicesTest)
+>       putStr (testResultStr "weighingsTest1 " weighingsTest1)
+>       putStr (testResultStr "outcomesTest1  " outcomesTest1)
+>       putStr (testResultStr "outcomesTest2  " outcomesTest2)
+>       putStr (testResultStr "productiveTest " productiveTest)
+>       putStr (testResultStr "testsTest1     " testsTest1)
+
+==============================================================================
+
 
 TODO: refactor to have on efunction for the maktee for
 all 3 of them (a parametrized one)
-
-
 
 Solution from the book
 -----------------------
