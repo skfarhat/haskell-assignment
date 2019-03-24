@@ -331,6 +331,43 @@ BUG: there's something wrong with bestTests or optimal, or both.
 > bestTests :: State -> [Test]
 > bestTests s = filter (\w -> optimal s w) $ tests s
 
+We check the correctness of bestTests manually against our implementation in
+previous sections (2,3,4). Obviously, if our implementations above are incorrect
+then this would make our checks here meaningless but we take our chances.
+
+Assuming a starting state (Pair 8 0).
+
+The output of our bestTests is:
+  bestTests = [TPair (2,0) (2,0),TPair (3,0) (3,0),TPair (4,0) (4,0)]
+suggesting all tests in the list are optimal.
+
+Our mktree (Pair 8 0) returns a single minimal tree, with Node TPair (2,0) (2,0)
+so at least we know that the first in the list of bestTests is indeed a 'bestTest'.
+Going back to our mktree implementation, the function uses minimumBy which returns
+the **first** minimum element that it finds in the list.
+
+We define mktrees, a modified version of mktree to return all trees that are minimum.
+mktrees returns a list of Trees instead of a single one.
+
+(TODO: maybe mktrees implementation can be improved below?)
+
+> mktrees :: State -> [Tree]
+> mktrees s
+>     | final s = [Stop s]
+>     | otherwise = filter (\x -> (height x) == h) allTrees
+>       where
+>         h = height $ minHeight $ allTrees
+>         allTrees = map testToTree allTests
+>         testToTree t = Node t $ map mktree $ outcomes s t
+>         allTests = tests s
+
+Note that we could also then remodify mktree to just become:
+  mktree = head . mktrees
+
+-- > map (height) mktrees (Pair 8 0)
+
+--------------------------------------------------------
+
 > mktreeG :: State -> TreeH
 > mktreeG s
 >     | final s = StopH s
@@ -338,8 +375,17 @@ BUG: there's something wrong with bestTests or optimal, or both.
 >         where
 >           optimalTest = head $ bestTests s
 >           trees = map mktreeG $ outcomes s optimalTest
->           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
 
+19. Define a function mktreesG :: State → [TreeH]
+
+> mktreesG :: State -> [TreeH]
+> mktreesG s = map (\t -> nodeH t (map mktreeG $ outcomes s t)) $ bestTests s
+
+There is only one.
+(Recall that Data.List.nub removes duplicates from a list. Hence, all those trees have height 3.) How many minimum-height decision trees are there for n = 12?
+
+TODO: we have lots of treeCmp, maybe we want to create a separate
+function for that
 
 TEST:
 ------
