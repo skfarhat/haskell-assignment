@@ -4,7 +4,7 @@
 
 We therefore model the state of the simulation by the datatype State:
 
-> data State = Pair Int Int | Triple Int Int Int
+> data State = Pair Int Int | Triple Int Int Int | Invalid
 >   deriving (Eq, Show)
 
 > data Test = TPair (Int, Int) (Int, Int) | TTrip (Int, Int, Int) (Int, Int, Int)
@@ -14,6 +14,7 @@ SAMI: I'm curious as to why we can't use 'Pair' and 'Triple' types as part of th
 of Test. Check if that works, and consider suggesting it in the assignment.
 
 > valid :: State -> Test -> Bool
+> valid Invalid _ = False
 > valid (Pair _ _) (TTrip _ _) = False
 > valid (Triple _ _ _) (TPair _ _) = False
 > valid (Pair u g) (TPair (a,b) (c,d)) = allPositive && equalPans && sufficientCoins
@@ -31,13 +32,18 @@ TODO: do we need an otherwise at the last one above?
 
 2. We represent the three outcomes of a test as a list. Define a function
 
+> mkTriple :: Int -> Int -> Int -> State
+> mkTriple a b c
+>         | a == 0 && b == 0 = Invalid
+>         | otherwise = (Triple a b c)
+
 > outcomes :: State -> Test -> [State]
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >       | valid (Pair u g) (TPair (a,b) (c,d))
 >           = [
->               Triple  a c (g+u-us),
+>               mkTriple  a c (g+u-us),
 >               Pair    (u-us) (g+us),
->               Triple  c a (g+u-us)
+>               mkTriple  c a (g+u-us)
 >             ]
 >       | otherwise = []
 >     where
@@ -46,9 +52,9 @@ TODO: do we need an otherwise at the last one above?
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >     | valid (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >         = [
->               Triple a  e  (g+l+h-a-e),
->               Triple l' h' (g+a+b+d+e),
->               Triple d  b  (g+l+h-b-d)
+>               (mkTriple a e (g+l+h-a-e)),
+>               (mkTriple l' h' (g+a+b+d+e)),
+>               (mkTriple d b (g+l+h-b-d))
 >           ]
 >     | otherwise = []
 >     where
@@ -100,11 +106,15 @@ Hence d == 0.
 TODO: check if there is a neater way to do the below:
 
 > instance Ord State where
+>         compare Invalid _ = LT
+>         compare _ Invalid = GT
 >         compare (Pair _ _) (Triple _ _ _) 		= GT
 >         compare (Triple _ _ _) (Pair _ _) 		= LT
 >         compare (Pair _ g1) (Pair _ g2) 			= compare g2 g1
 >         compare (Triple _ _ g1) (Triple _ _ g2) 	= compare g2 g1
 
+-- > instance Eq TreeH where
+-- >         compare
 
 7. Define a predicate productive
 
@@ -140,6 +150,7 @@ TODO: Similarly with the Triple case, we cannot identify the counterfeit coin wi
 TODO: Check if we want to make checks on the provided states before answering 'final'
 
 > final :: State -> Bool
+> final Invalid = True
 > final (Pair u g) 		= u == 0
 > final (Triple l h g) 	= foundSingleFake || allGenuine
 > 			where
@@ -162,8 +173,13 @@ which coin and whether it is light or heavy.
 10. Define a function height
 
 > height :: Tree -> Int
-> height (Stop _) = 0
-> height (Node _ nodes) = 1 + (maximum $ map height nodes)
+> height (Stop Invalid) = 1000000
+> height (Stop (Pair _ _)) = 0
+> height (Stop (Triple _ _ _)) = 0
+> height (Node _ nodes) = 1 + myMax
+>        where
+>           myMax = if all (==(height (Stop Invalid))) (map height $ nodes) then (height (Stop Invalid))
+>                   else (maximum $ map height nodes)
 
 
 TEST
