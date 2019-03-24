@@ -173,13 +173,8 @@ which coin and whether it is light or heavy.
 10. Define a function height
 
 > height :: Tree -> Int
-> height (Stop Invalid) = 1000000
-> height (Stop (Pair _ _)) = 0
-> height (Stop (Triple _ _ _)) = 0
-> height (Node _ nodes) = 1 + myMax
->        where
->           myMax = if all (==(height (Stop Invalid))) (map height $ nodes) then (height (Stop Invalid))
->                   else (maximum $ map height nodes)
+> height (Stop _) = 0
+> height (Node _ nodes) = 1 + (maximum $ map height nodes)
 
 
 TEST
