@@ -1,3 +1,5 @@
+TODO: the lines cut in the pdf output - need to prevent that.
+
 > module CoinProblem where
 
 > import Data.List (minimumBy)
@@ -5,7 +7,7 @@
 > import Debug.Trace
 
 2. States and tests
-==================
+===================
 
 > data State = Pair Int Int | Triple Int Int Int | Invalid
 >   deriving (Eq, Show)
@@ -65,13 +67,17 @@ First, let us discuss why the first two outcomes are invalid:
   which is impossible in a Triple state. We have already seen the scales tip to one end in our of the earlier tests,
   so how are you telling me that all are genuine?
 
+
+mkTriple
+--------
+
 Following on from the above, it is impossible to have a state (Triple 0 0 x) because that would imply all are genuine.
 
 We create a function mkTriple to wrap around the Triple constructor.
 The function checks the 'l' and 'h' parameters; if both are zero it returns an Invalid state instead of an invalid Triple state.
 Hence mkTriple (0 0 9) = Invalid.
 
-From this point onwards, there should be no bare Triple constructors. Instead, mkTriple is used.
+Going forward, there should be no bare Triple constructors, instead mkTriple is employed.
 
 > mkTriple :: Int -> Int -> Int -> State
 > mkTriple l h g
@@ -79,7 +85,38 @@ From this point onwards, there should be no bare Triple constructors. Instead, m
 >   | otherwise = (Triple l h g)
 
 
+Outcome
+-------
+
+Outcome is the critical function to get right in this problem.
+
+We will first outline the unbreakable ground-rules before proceeding to other details.
+
+For both state-test combinations (Pair-TPair and Triple-TTrip):
+
+(1) An empty list is returned if the state-test combination is invalid according to our definition of 'valid'
+(2) The genuine coins used in both pans of the test end up in the genuine bucket of the outcomes.
+    For instance, in a TPair (a,b) (c,d) both b and d will end up in the genuine bucket of all outcome states,
+    and for TTrip (a,b,c) (d,e,f), both c and f end up in the genuine bucket of all outcome states.
+(3) Each of the outcomes must have the same number of coins in total as the starting state (of course!).
+    We will compute this sum in our explanation to showcase that this invariant is held - but also for sanity
+    checking our implementation.
+
+The outcomes signature is:
+
 > outcomes :: State -> Test -> [State]
+
+For the Pair-TPair case:
+
+- If the pans balance (middle outcome), then we know that all coins on the scale are genuines.
+  The unknowns ('a' and 'c') join the rest of the genuines, so we remove (us=a+c) from the unknowns and add them
+  to the genuines (g+us)
+- When the scale tips to one side, we know there's a counterfeit but we don't know if the counterfeit is heavier or
+  lighter, so we move all those unknown on the heavy side to the suspect-heavy bucket ('h') and all those unknown on the
+  light side to the suspect-light bucket ('l'). As per (1) all genuines go back to the genuine pile.
+  When (a,b) < (c,d), we move 'a' to the light bucket 'l' and 'c' to the heavy bucket.
+  And vice versa when (a,b) > (c,d). I'm sure we all get it. Super.
+
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >   | valid (Pair u g) (TPair (a,b) (c,d)) = [
 >       mkTriple  a c (g+u-us),
@@ -87,21 +124,25 @@ From this point onwards, there should be no bare Triple constructors. Instead, m
 >       mkTriple  c a (g+u-us)
 >     ]
 >   | otherwise = []
->   where
->     us = a + c
->
+>   where us = a + c
+
+
+If doing a TTrip test:
+
+  - take all suspect-light coins from the light pan and place them in the light bucket of the end state
+  - we take the suspect-heavy coins from the heavy pan and place them in the heavy bucket of the end state
+
+
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
 >       (mkTriple a e (g+l+h-a-e)),
->       (mkTriple l' h' (g+a+b+d+e)),
+>       (mkTriple (l-l') (h-h') (g+l'+h')),
 >       (mkTriple d b (g+l+h-b-d))
 >     ]
 >   | otherwise = []
 >   where
->     l' = l - a - d
->     h' = h - b - e
-
-TODO: why have we chosen l' and h' to use as shortcuts, let's find something else that's better.
+>     l' = a + d
+>     h' = b + e
 
 
 to compute the three outcomes of a valid test. For example,
