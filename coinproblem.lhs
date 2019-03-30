@@ -1,3 +1,5 @@
+> module CoinProblem where
+
 > import Data.List (minimumBy)
 > import Data.List (elemIndex) -- imported by non-essential functions
 > import Debug.Trace
@@ -9,9 +11,6 @@ We therefore model the state of the simulation by the datatype State:
 
 > data Test = TPair (Int, Int) (Int, Int) | TTrip (Int, Int, Int) (Int, Int, Int)
 >     deriving (Eq, Show)
-
-SAMI: I'm curious as to why we can't use 'Pair' and 'Triple' types as part of the signatures
-of Test. Check if that works, and consider suggesting it in the assignment.
 
 > valid :: State -> Test -> Bool
 > valid Invalid _ = False
