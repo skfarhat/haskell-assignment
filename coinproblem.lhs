@@ -1,4 +1,6 @@
 TODO: the lines cut in the pdf output - need to prevent that.
+TODO: be consistent as to whether there are spaces betwen the pluses
+TODO: be consistent with usage of pan and bucket
 
 > module CoinProblem where
 
@@ -75,7 +77,7 @@ Following on from the above, it is impossible to have a state (Triple 0 0 x) bec
 
 We create a function mkTriple to wrap around the Triple constructor.
 The function checks the 'l' and 'h' parameters; if both are zero it returns an Invalid state instead of an invalid Triple state.
-Hence mkTriple (0 0 9) = Invalid.
+Hence, mkTriple (0 0 9) = Invalid.
 
 Going forward, there should be no bare Triple constructors, instead mkTriple is employed.
 
@@ -85,7 +87,7 @@ Going forward, there should be no bare Triple constructors, instead mkTriple is 
 >   | otherwise = (Triple l h g)
 
 
-Outcome
+outcome
 -------
 
 Outcome is the critical function to get right in this problem.
@@ -111,11 +113,21 @@ For the Pair-TPair case:
 - If the pans balance (middle outcome), then we know that all coins on the scale are genuines.
   The unknowns ('a' and 'c') join the rest of the genuines, so we remove (us=a+c) from the unknowns and add them
   to the genuines (g+us)
-- When the scale tips to one side, we know there's a counterfeit but we don't know if the counterfeit is heavier or
-  lighter, so we move all those unknown on the heavy side to the suspect-heavy bucket ('h') and all those unknown on the
-  light side to the suspect-light bucket ('l'). As per (1) all genuines go back to the genuine pile.
-  When (a,b) < (c,d), we move 'a' to the light bucket 'l' and 'c' to the heavy bucket.
-  And vice versa when (a,b) > (c,d). I'm sure we all get it. Super.
+- When the scale tips to one side, we know there's a counterfeit
+  but we don't know if the counterfeit is heavier or lighter,
+  so we move all those unknown on the heavy side to the
+  suspect-heavy bucket ('h') and all those unknown on the
+  light side to the suspect-light bucket ('l').
+  As per (1) all genuines go back to the genuine pile.
+  When (a,b) < (c,d), we move
+    - 'a' to the light bucket 'l'
+    - 'c' to the heavy bucket 'h'
+    - all remaining unknowns (u-us) to the genuine bucket 'g'
+  ending up with Triple a c (g+u-us)
+
+  It is vice versa when (a,b) > (c,d), we get Triple c a (g+u-us)
+
+  I'm sure we all get it. Super.
 
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >   | valid (Pair u g) (TPair (a,b) (c,d)) = [
@@ -126,24 +138,46 @@ For the Pair-TPair case:
 >   | otherwise = []
 >   where us = a + c
 
+For the Triple-TTrip case, things are a little more complicated:
 
-If doing a TTrip test:
+- When the pans balance (middle outcome = (a,b,c) = (d,e,f))
+  we know that all coins on both sides of the scale are genuine,
+  so we move all suspect-lights ('a' and 'd') and all suspect-heavies
+  ('b' and 'e') to the genuine pile, ending up with
+    - l - (a + d) in the light bucket
+    - h - (b + e) in the heavy bucket
+    - g + (a + d + b + e)
+  Note, that c and f are not mentioned because we sort of did
+  g - (c + f) + (c + f) = g, when we brought them back.
+- When the left pan is ligher than the right pan (left outcome = (a,b,c) < (d,e,f))
+    - all suspect-lights from the left pan 'a' go to the light bucket
+    - all suspect-heavies from the right pan 'e' go the heavy bucket
+    - the rest, and I mean *all the rest* goes to the genuine bucket.
+      This means, (l-a) which is all of what remains of the suspect-lights,
+      (h-e) which is all of what remains from the suspect-heavies
+      end up in the genuines --> g = g + (l - a) + (h - e)
+- When the right pan is heavier than the left pan (right outcomes = (a,b,c) > (d,e,f))
+  It is essentially vice versa, but I'll go through it anyway.
+      - all suspect-lights from the right pan 'd' go to the light bucket
+      - all suspect-heavies from the left pan 'b' go the the heavy bucket
+      - the rest goes to the genuine bucket. That is, g = g + (l - d) + (h - b)
 
-  - take all suspect-light coins from the light pan and place them in the light bucket of the end state
-  - we take the suspect-heavy coins from the heavy pan and place them in the heavy bucket of the end state
-
+TODO: replace all the parentheses here with $ better
 
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
->       (mkTriple a e (g+l+h-a-e)),
+>       (mkTriple a e (g+(l-a)+(h-e))),
 >       (mkTriple (l-l') (h-h') (g+l'+h')),
->       (mkTriple d b (g+l+h-b-d))
+>       (mkTriple d b (g+(l-d)+(h-b)))
 >     ]
 >   | otherwise = []
 >   where
 >     l' = a + d
 >     h' = b + e
 
+
+weighings
+---------
 
 to compute the three outcomes of a valid test. For example,
 outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
