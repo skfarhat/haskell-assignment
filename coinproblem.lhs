@@ -4,7 +4,7 @@
 > import Data.List (elemIndex) -- imported by non-essential functions
 > import Debug.Trace
 
-2 States and tests
+2. States and tests
 ==================
 
 > data State = Pair Int Int | Triple Int Int Int | Invalid
@@ -46,7 +46,7 @@ and when all below booleans are true:
 > valid _ _ = False
 
 
-3 Choosing and conducting a test
+3. Choosing and conducting a test
 ================================
 
 Working through the coin problem, it is evident that some states are impossible to reach
@@ -168,8 +168,8 @@ among the possible weighings; define the function tests to do this.
 > tests :: State -> [Test]
 > tests s = filter (\w -> productive s w) $ weighings s
 
-4 Decision trees
-================
+4. Decision trees
+=================
 
 > data Tree = Stop State | Node Test [Tree]
 > 		deriving Show
@@ -326,7 +326,7 @@ for it.
 >           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
 
 
-6 A greedy solution
+6. A greedy solution
 ===================
 
 TODO: check if this is meant to be an and or an or
