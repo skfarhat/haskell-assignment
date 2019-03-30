@@ -11,7 +11,7 @@
 >   deriving (Eq, Show)
 
 > data Test = TPair (Int, Int) (Int, Int) | TTrip (Int, Int, Int) (Int, Int, Int)
->     deriving (Eq, Show)
+>   deriving (Eq, Show)
 
 The 'valid' function below returns True only when its arguments are of types
 - Pair and TPair
@@ -19,26 +19,32 @@ The 'valid' function below returns True only when its arguments are of types
 
 and when all below booleans are true:
 
-- allPositive : all integers in Pair, Triple, TPair, TTrip instances are positive
-- sufficientCoins:  for both State-Test combinations, there must be at least as many coins of each type in the State than there are in the Test
+- allPositive : all integers in Pair, Triple, TPair, TTrip instances are positive.
+- sufficientCoins:  for both State-Test combinations, there must be at least as many coins
+                    of each type in the State than there are in the Test.
 - equalPans: the provided test must have an equal number of coins on both sides of the scale
-
-TODO: should we return valid = False when there are zero coins in the Test?
+- nonZero: the number of coins in each pan of the test is non-zero, since you also
+            "learn nothing from weighing zero with zero".
+            Note that it is sufficient to check sum[a,b] == 0 without sum[c,d] == 0
+            because we have equalPans that enforces the latter (same for Triple case).
 
 > valid :: State -> Test -> Bool
 > valid (Pair u g) (TPair (a,b) (c,d)) = allPositive && equalPans && sufficientCoins
->       where
->           allPositive = all (>=0) [u,g,a,b,c,d]
->           equalPans = sum[a,b] == sum[c,d]
->           sufficientCoins = sum[a,c] <= u && sum[b,d] <= g
+>   where
+>     allPositive = all (>=0) [u,g,a,b,c,d]
+>     equalPans = sum[a,b] == sum[c,d]
+>     sufficientCoins = sum[a,c] <= u && sum[b,d] <= g
+>     nonZero = sum[a,b] != 0
+>
 > valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = allPositive && equalPans && sufficientCoins
->       where
->           allPositive = all (>=0) [l,h,g,a,b,c,d,e,f]
->           equalPans = sum[a,b,c] == sum[d,e,f]
->           sufficientCoins = sum[a,d] <= l && sum[b,e] <= h && sum[c,f] <= g
+>   where
+>     allPositive = all (>=0) [l,h,g,a,b,c,d,e,f]
+>     equalPans = sum[a,b,c] == sum[d,e,f]
+>     sufficientCoins = sum[a,d] <= l && sum[b,e] <= h && sum[c,f] <= g
+>     nonZero = sum[a,b,c] != 0
+>
 > valid _ _ = False
 
-TODO: do we need an otherwise at the last one above?
 
 3 Choosing and conducting a test
 ================================
