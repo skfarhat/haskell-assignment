@@ -49,36 +49,59 @@ and when all below booleans are true:
 3 Choosing and conducting a test
 ================================
 
-2. We represent the three outcomes of a test as a list. Define a function
+Working through the coin problem, it is evident that some states are impossible to reach
+and confirmation of this can be found in the coversheet section discussing the outcomes of
+State=(Triple 3 0 6) with Test=(TTrip (0, 0, 3) (3, 0, 0)) which are [Triple 0 0 9,Triple 0 0 9,Triple 3 0 6].
+
+First, let us discuss why the first two outcomes are invalid:
+
+- The leftmost outcome occurs when the 3 genuine coins weighed less than the 3 coins that were once in a light pan (0,0,3) < (3,0,0).
+  This outcome is impossible because in a TTrip test, a pan containing all genuine coins cannot weigh less than a pan with
+  no suspect-heavy coins. Genuine coins are on the lighter side of the scale when weighed against
+    (a) unknown coins in a TPair test
+    (b) suspect-heavy coins in a TTrip test
+- The middle outcome occurs if the pan with 3 genuines balances with the pan with 3 suspect-lights (0,0,3) == (3,0,0)
+  Normally, it is possible for genuines to balance with suspects but in this case a balance implies all coins are genuine,
+  which is impossible in a Triple state. We have already seen the scales tip to one end in our of the earlier tests,
+  so how are you telling me that all are genuine?
+
+Following on from the above, it is impossible to have a state (Triple 0 0 x) because that would imply all are genuine.
+
+We create a function mkTriple to wrap around the Triple constructor.
+The function checks the 'l' and 'h' parameters; if both are zero it returns an Invalid state instead of an invalid Triple state.
+Hence mkTriple (0 0 9) = Invalid.
+
+From this point onwards, there should be no bare Triple constructors. Instead, mkTriple is used.
 
 > mkTriple :: Int -> Int -> Int -> State
-> mkTriple a b c
->         | a == 0 && b == 0 = Invalid
->         | otherwise = (Triple a b c)
+> mkTriple l h g
+>   | l == 0 && h == 0 = Invalid
+>   | otherwise = (Triple l h g)
+
 
 > outcomes :: State -> Test -> [State]
 > outcomes (Pair u g) (TPair (a,b) (c,d))
->       | valid (Pair u g) (TPair (a,b) (c,d))
->           = [
->               mkTriple  a c (g+u-us),
->               Pair    (u-us) (g+us),
->               mkTriple  c a (g+u-us)
->             ]
->       | otherwise = []
->     where
->         us = a + c
+>   | valid (Pair u g) (TPair (a,b) (c,d)) = [
+>       mkTriple  a c (g+u-us),
+>       Pair    (u-us) (g+us),
+>       mkTriple  c a (g+u-us)
+>     ]
+>   | otherwise = []
+>   where
+>     us = a + c
 >
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
->     | valid (Triple l h g) (TTrip (a,b,c) (d,e,f))
->         = [
->               (mkTriple a e (g+l+h-a-e)),
->               (mkTriple l' h' (g+a+b+d+e)),
->               (mkTriple d b (g+l+h-b-d))
->           ]
->     | otherwise = []
->     where
->       l' = l - a - d
->       h' = h - b - e
+>   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
+>       (mkTriple a e (g+l+h-a-e)),
+>       (mkTriple l' h' (g+a+b+d+e)),
+>       (mkTriple d b (g+l+h-b-d))
+>     ]
+>   | otherwise = []
+>   where
+>     l' = l - a - d
+>     h' = h - b - e
+
+TODO: why have we chosen l' and h' to use as shortcuts, let's find something else that's better.
 
 
 to compute the three outcomes of a valid test. For example,
