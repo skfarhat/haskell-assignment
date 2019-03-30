@@ -162,13 +162,13 @@ For the Triple-TTrip case, things are a little more complicated:
       - all suspect-heavies from the left pan 'b' go the the heavy bucket
       - the rest goes to the genuine bucket. That is, g = g + (l - d) + (h - b)
 
-TODO: replace all the parentheses here with $ better
+TODO: figure out how best to neaten this up
 
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
->       (mkTriple a e (g+(l-a)+(h-e))),
->       (mkTriple (l-l') (h-h') (g+l'+h')),
->       (mkTriple d b (g+(l-d)+(h-b)))
+>       mkTriple a      e      $ g+(l-a)+(h-e),
+>       mkTriple (l-l') (h-h') $ g+l'+h',
+>       mkTriple d      b      $ g+(l-d)+(h-b)
 >     ]
 >   | otherwise = []
 >   where
