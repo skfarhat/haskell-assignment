@@ -29,19 +29,19 @@ and when all below booleans are true:
             because we have equalPans that enforces the latter (same for Triple case).
 
 > valid :: State -> Test -> Bool
-> valid (Pair u g) (TPair (a,b) (c,d)) = allPositive && equalPans && sufficientCoins
+> valid (Pair u g) (TPair (a,b) (c,d)) = allPositive && equalPans && sufficientCoins && nonZero
 >   where
 >     allPositive = all (>=0) [u,g,a,b,c,d]
 >     equalPans = sum[a,b] == sum[c,d]
 >     sufficientCoins = sum[a,c] <= u && sum[b,d] <= g
->     nonZero = sum[a,b] != 0
+>     nonZero = sum[a,b] /= 0
 >
-> valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = allPositive && equalPans && sufficientCoins
+> valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = allPositive && equalPans && sufficientCoins && nonZero
 >   where
 >     allPositive = all (>=0) [l,h,g,a,b,c,d,e,f]
 >     equalPans = sum[a,b,c] == sum[d,e,f]
 >     sufficientCoins = sum[a,d] <= l && sum[b,e] <= h && sum[c,f] <= g
->     nonZero = sum[a,b,c] != 0
+>     nonZero = sum[a,b,c] /= 0
 >
 > valid _ _ = False
 

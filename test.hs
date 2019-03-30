@@ -6,14 +6,23 @@ triple = (Triple 3 3 9)
 tpair = TPair (3,0)(3,0)
 ttrip = TTrip (3,0,0) (0,0,3)
 
+-- ==============================================================================
+-- Test: valid
+
 validTest1 = (valid Invalid ttrip) == False
 validTest2 = (valid Invalid tpair) == False
 validTest3 = (valid pair ttrip) == False
 validTest4 = (valid triple tpair) == False
 validTest5 = (valid pair tpair) == True
 validTest6 = (valid triple ttrip) == True
+validTest7 = (valid (Pair 8 0) (TPair (0,0) (0,0))) == False -- Check that false is returned when the test has no coins
+validTest8 = (valid (Triple 3 3 6) (TTrip (0,0,0) (0,0,0))) == False -- Check that false is returned when the test has no coins
 
-validTests = all (==True) [ validTest1, validTest2, validTest3, validTest4, validTest5 ]
+validTests = all (==True) [ validTest1, validTest2, validTest3, validTest4, validTest5, validTest6, validTest7, validTest8 ]
+
+-- ==============================================================================
+-- Test: outcomes
+
 
 
 -- ==============================================================================
