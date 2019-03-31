@@ -8,9 +8,7 @@ function for that
 all 3 of them (a parametrized one)
 
 > module CoinProblem where
-
-> import Data.List (minimumBy)
-> import Data.List (elemIndex) -- imported by non-essential functions
+> import Data.List (minimumBy, elemIndex)
 > import Debug.Trace
 
 2. States and tests
@@ -89,7 +87,7 @@ Going forward, there should be no bare Triple constructors, instead mkTriple is 
 > mkTriple :: Int -> Int -> Int -> State
 > mkTriple l h g
 >   | l == 0 && h == 0 = Invalid
->   | otherwise = (Triple l h g)
+>   | otherwise = Triple l h g
 
 
 outcome
@@ -184,8 +182,16 @@ TODO: figure out how best to neaten this up
 weighings
 ---------
 
+We'll start out defining and justifying the implementation of choices,
+before proceeding to weighings.
+
 > choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
-> choices k (l, h, g) = [(i,j,k-i-j) | i <- [0..l], j <- [0..h], (k-i-j) <= g && (k-i-j) >= 0]
+> choices k (l, h, g) = [
+>     (i,j,r) | i <- [0..l],
+>               j <- [0..h],
+>               0 =< r && r <= g && r >= 0
+>   ]
+>   where r = k-i-j
 
 to compute the three outcomes of a valid test. For example,
 outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
@@ -243,6 +249,9 @@ among the possible weighings; define the function tests to do this.
 > tests :: State -> [Test]
 > tests s = filter (\w -> productive s w) $ weighings s
 
+TODO: replace the above with (productive s) and explain why it works.
+
+
 4. Decision trees
 =================
 
@@ -290,7 +299,7 @@ which coin and whether it is light or heavy.
 
 > height :: Tree -> Int
 > height (Stop _) = 0
-> height (Node _ nodes) = 1 + (maximum $ map height nodes)
+> height (Node _ nodes) = 1 + maximum (map height nodes)
 
 
 11. Define a function
@@ -298,7 +307,7 @@ which coin and whether it is light or heavy.
 > minHeight :: [Tree] -> Tree
 > minHeight trees = minimumBy treeCmp trees
 > 		where
-> 			treeCmp t1 t2 = (height t1) `compare` (height t2)
+> 			treeCmp t1 t2 = height t1 `compare` height t2
 
 An alternative definition (TODO: check why elemIndex is failing)
 
@@ -313,7 +322,7 @@ that returns the tree of minimum height from a non-empty list of trees.
 > s1 = Pair 12 0
 > tt = tests s1
 > newTrees t = map mktree $ outcomes s1 t
-> f1 t = (Node t $ newTrees t)
+> f1 t = Node t $ newTrees t
 
 > minHeightOrMe :: Tree -> [Tree] -> Tree
 > minHeightOrMe t [] = t
@@ -327,7 +336,7 @@ Used for debugging
 > mktreeDebug :: State -> Tree
 > mktreeDebug s
 >     | final s || (length allTests == 0) = Stop s
->     | otherwise = (traceIt s) $ minHeight $ map testToTree allTests
+>     | otherwise = traceIt s $ minHeight $ map testToTree allTests
 >       where
 >         allTests = tests s
 >         testToTree t = Node t $ map mktreeDebug $ outcomes s t
@@ -382,7 +391,7 @@ TODO: convince yourself that heightH . tree2treeH = height
 >         where
 >           allTests = tests s
 >           testToTree t = nodeH t (map mktreeHTrace $ outcomes s t)
->           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
+>           treeCmp t1 t2 = heightH t1 `compare` heightH t2
 
 TODO:
 NOTE: I think this is wrong. we do minimumBy, but these should be the
@@ -398,7 +407,7 @@ for it.
 >         where
 >           allTests = tests s
 >           testToTree t = nodeH t (map mktreeH $ outcomes s t)
->           treeCmp t1 t2 = (heightH t1) `compare` (heightH t2)
+>           treeCmp t1 t2 = heightH t1 `compare` heightH t2
 
 
 6. A greedy solution
@@ -452,9 +461,9 @@ mktrees returns a list of Trees instead of a single one.
 > mktrees :: State -> [Tree]
 > mktrees s
 >     | final s = [Stop s]
->     | otherwise = filter (\x -> (height x) == h) allTrees
+>     | otherwise = filter (\x -> height x == h) allTrees
 >       where
->         h = height $ minHeight $ allTrees
+>         h = height $ minHeight allTrees
 >         allTrees = map testToTree allTests
 >         testToTree t = Node t $ map mktree $ outcomes s t
 >         allTests = tests s
