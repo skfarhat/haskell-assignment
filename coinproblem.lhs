@@ -280,15 +280,26 @@ repeated computations and saving time.
 
 6. Complete the definition of the ordering on State.
 
-TODO: check if there is a neater way to do the below:
+We implement the function compare on our State datatype to allow
+the implementation to judge whether certain tests help to progress towards a solution.
+
+- Triple provides more information than Pair thus
+  (Triple `compare` Pair = LT and Pair `compare` Triple = GT)
+- Invalid is a terminal state, it provides ample information hence it is
+  always the less than the other operand (Invalid `compare` _ = LT) and (_ `compare` Invalid = GT)
+- When comparing two instances of Pair, the one with more genuine coins provides more information
+  and should be the lesser of the two. The result of comparing 2 Pairs is the opposite of comparing their
+  genuine coins, hence Pair u1 g1 `compare` Pair u2 g2 = g2 `compare` g1
+- Same as above but for comparing a pair of Triples. The Triple with most genuines is
+  closer to the solution, thus Triple _ _ g1 `compare` Triple _ _ g2 = compare g2 g1
 
 > instance Ord State where
->         compare Invalid _ = LT
->         compare _ Invalid = GT
->         compare (Pair _ _) (Triple _ _ _) 		= GT
->         compare (Triple _ _ _) (Pair _ _) 		= LT
->         compare (Pair _ g1) (Pair _ g2) 			= compare g2 g1
->         compare (Triple _ _ g1) (Triple _ _ g2) 	= compare g2 g1
+>   compare Invalid _                         = LT
+>   compare _ Invalid                         = GT
+>   compare (Triple _ _ _) (Pair _ _)         = LT
+>   compare (Pair _ _) (Triple _ _ _)         = GT
+>   compare (Pair _ g1) (Pair _ g2)           = compare g2 g1
+>   compare (Triple _ _ g1) (Triple _ _ g2)   = compare g2 g1
 
 
 7. Define a predicate productive
