@@ -240,41 +240,42 @@ in the output of `weighings (Pair 4 1)`.
 >     ]
 >   where m = u `div` 2
 
-to compute the three outcomes of a valid test. For example,
-outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
-= [Triple 3 3 6, Pair 6 6, Triple 3 3 6]
+The Triple case is trickier and requires the subsidiary choices (defined further below).
+We perform the cartesian product of the set `choices k (l,h,g)` with itself and
+then filter TTrip combinations that do not satisfy the below conditions:
 
-TODO: Explain the 2*a+b <= u is (a+c) <= u and the c=a+b.
+- c*f = 0
+- a+b+c == d+e+f
+- b+e <= h
+- c+f <= g
+- a+d <= l
+- and the lexical ordering using (a,b,c) <= show (d,e,f)
 
-> weighings (Triple l h g) = [TTrip (a,b,c) (d,e,f)
->                                   | k       <- [1..krange],
->                                     (a,b,c) <- choices k (l, h, g),
->                                     (d,e,f) <- choices k (l, h, g),
->                                      b + e <= h,
->  									                   c + f <= g,
->                                      a + d <= l,
->                                      a + b + c == d + e + f,
->  									                   c * f == 0,
->                                      show (a,b,c) <= show (d,e,f)
-> 								]
->
->     where
->           krange = (l+h+g) `div` 2
+Note that the set `choices k (l, h, g)` is generated once only and stored in 'ch', avoiding
+repeated computations and saving time.
 
+> weighings (Triple l h g) = [
+>     TTrip (a,b,c) (d,e,f)
+>       | k <- [1..kr],
+>         let ch = choices k (l, h, g),
+>         (a,b,c) <- ch,
+>         (d,e,f) <- ch,
+>         c*f == 0,
+>         a+b+c == d+e+f,
+>         b+e <= h,
+>         c+f <= g,
+>         a+d <= l,
+>         show (a,b,c) <= show (d,e,f)
+>     ]
+>     where kr = (l+h+g) `div` 2
 
 > choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
 > choices k (l, h, g) = [
->     (i,j,k-i-j) | i <- [0..l],
->               j <- [0..h],
->               0 <= k-i-j && k-i-j <= g
+>   (i,j,k-i-j)
+>     | i <- [0..l],
+>       j <- [0..h],
+>       0 <= k-i-j && k-i-j <= g
 >   ]
-
-
-ANSWER:
-(why?):
-If we take b = 0, then we have a = c + d according to condition (1)
-With d != 0, we have c < a, but if c < a then (a,b) > (c,d) which violates condition (6)
-Hence d == 0.
 
 
 6. Complete the definition of the ordering on State.
