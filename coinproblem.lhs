@@ -182,16 +182,63 @@ TODO: figure out how best to neaten this up
 weighings
 ---------
 
-We'll start out defining and justifying the implementation of choices,
-before proceeding to weighings.
+Next, we define the function weighings returning all sensible weighing
+possiblities given a number of coins.
 
-> choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
-> choices k (l, h, g) = [
->     (i,j,r) | i <- [0..l],
->               j <- [0..h],
->               0 =< r && r <= g && r >= 0
->   ]
->   where r = k-i-j
+For a Pair-TPair test, we have the following contraints:
+
+1. Both pans must have the same number of coins: a + b = c + d
+2. One of the pans must not have genuine coins: b * d = 0
+3. Only the lexically smaller of symmetrical weighings is returned
+   e.g. return the former from TPair (0,1) (1,0) and TPair (1,0) (0,1)
+
+The above can only be satisfied if d = 0, why?
+Proof by contradiction, assume d /= 0.
+From (2), we have b = 0 and (1) becomes a = c + d which means a > c
+because d > 0 (remember d cannot be negative), but this contradicts (3).
+So d cannot be non-zero, hence d is zero.
+
+From the above, we have a + b = c and TPair (a,b) (c,d) becomes TPair (a,b) (a+b,0)
+
+We can generate all combinations using list comprehension while ensuring the
+below conditions remain satisfied:
+
+- a + b /= 0
+- 2a + b <= u
+- b <= g
+
+The highest possible value possible for 'a' is m = u `div` 2.
+We can prove this by contradiction, assume a = m + 1
+Then when u is even
+```
+  a = m + 1
+  a = u/2 + 1
+  2a = u + 2
+  2a > u        (contradiction)
+```
+when u is odd,
+```
+  m = (u-1)/2
+  m+1 = (u-1)/2 + 1
+  a = (u+1)/2
+  2a = u+1
+  2a > u        (contradiction)
+```
+To be clear, not all combinations of a <- [0..m] and b <- [0..g] are valid,
+we still need to filter out weighings where 2a + b > u or a + b = 0
+
+As an example, we don't want `TPair (0,0) (0,0) or TPair (2,1) (3,0)`
+in the output of `weighings (Pair 4 1)`.
+
+> weighings :: State -> [Test]
+> weighings (Pair u g) = [
+>     TPair (a, b) (a+b, 0)
+>       | a <- [0..m],
+>         b <- [0..g],
+>         a+b /= 0,
+>         2*a+b <= u
+>     ]
+>   where m = u `div` 2
 
 to compute the three outcomes of a valid test. For example,
 outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
@@ -199,10 +246,6 @@ outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
 
 TODO: Explain the 2*a+b <= u is (a+c) <= u and the c=a+b.
 
-> weighings :: State -> [Test]
-> weighings (Pair u g) = [TPair (a, b) (a+b, 0) | a <- [0..m], b <- [0..g], a+b /= 0, 2*a + b <= u]
->     where
->           m = u `div` 2
 > weighings (Triple l h g) = [TTrip (a,b,c) (d,e,f)
 >                                   | k       <- [1..krange],
 >                                     (a,b,c) <- choices k (l, h, g),
@@ -217,6 +260,15 @@ TODO: Explain the 2*a+b <= u is (a+c) <= u and the c=a+b.
 >
 >     where
 >           krange = (l+h+g) `div` 2
+
+
+> choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
+> choices k (l, h, g) = [
+>     (i,j,k-i-j) | i <- [0..l],
+>               j <- [0..h],
+>               0 <= k-i-j && k-i-j <= g
+>   ]
+
 
 ANSWER:
 (why?):
