@@ -1,6 +1,11 @@
-TODO: the lines cut in the pdf output - need to prevent that.
-TODO: be consistent as to whether there are spaces betwen the pluses
-TODO: be consistent with usage of pan and bucket
+
+* TODO: the lines cut in the pdf output - need to prevent that.
+* TODO: be consistent as to whether there are spaces betwen the pluses
+* TODO: be consistent with usage of pan and bucket
+* TODO: we have lots of treeCmp, maybe we want to create a separate
+function for that
+* TODO: refactor to have on efunction for the maktee for
+all 3 of them (a parametrized one)
 
 > module CoinProblem where
 
@@ -104,7 +109,7 @@ For both state-test combinations (Pair-TPair and Triple-TTrip):
     We will compute this sum in our explanation to showcase that this invariant is held - but also for sanity
     checking our implementation.
 
-The outcomes signature is:
+The signature of outcomes is:
 
 > outcomes :: State -> Test -> [State]
 
@@ -179,6 +184,9 @@ TODO: figure out how best to neaten this up
 weighings
 ---------
 
+> choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
+> choices k (l, h, g) = [(i,j,k-i-j) | i <- [0..l], j <- [0..h], (k-i-j) <= g && (k-i-j) >= 0]
+
 to compute the three outcomes of a valid test. For example,
 outcomes (Pair 12 0) (TPair (3, 0) (3, 0))
 = [Triple 3 3 6, Pair 6 6, Triple 3 3 6]
@@ -211,12 +219,6 @@ With d != 0, we have c < a, but if c < a then (a,b) > (c,d) which violates condi
 Hence d == 0.
 
 
-4. Define choices.
-
-> choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
-> choices k (l, h, g) = [(i,j,k-i-j) | i <- [0..l], j <- [0..h], (k-i-j) <= g && (k-i-j) >= 0]
-
-
 6. Complete the definition of the ordering on State.
 
 TODO: check if there is a neater way to do the below:
@@ -229,8 +231,6 @@ TODO: check if there is a neater way to do the below:
 >         compare (Pair _ g1) (Pair _ g2) 			= compare g2 g1
 >         compare (Triple _ _ g1) (Triple _ _ g2) 	= compare g2 g1
 
--- > instance Eq TreeH where
--- >         compare
 
 7. Define a predicate productive
 
@@ -482,49 +482,3 @@ Note that we could also then remodify mktree to just become:
 There is only one.
 (Recall that Data.List.nub removes duplicates from a list. Hence, all those trees have height 3.) How many minimum-height decision trees are there for n = 12?
 
-TODO: we have lots of treeCmp, maybe we want to create a separate
-function for that
-
-
-TODO: refactor to have on efunction for the maktee for
-all 3 of them (a parametrized one)
-
-Solution from the book
------------------------
-
-Solution
-
-The decision tree in Figure 4.101 presents an algorithm that solvesthe fake-coin puzzle for 12 coins in three weighings.
-In this tree the coins arenumbered from 1 to 12.
-Internal nodes indicate weighings, with the coins beingweighted listed inside the node.
-For example, the root corresponds to the firstweighing in which coins 1, 2, 3, 4 and coins 5, 6, 7, 8 are put on the left and rightpan of the scale,
- respectively.
-Edges to a node’s children are marked according tothe node’s weighing outcome:<means that the left pan’s weight is smaller thanthat of the right’s pan,
-=means that the weights are equal,
- and>means that theleft pan’s weight is larger than that of the right pan.
-Leaves indicate final outcomes:=means that all the coins are genuine,
- and a number followed by+or−meansthat the coin with that number is heavier or lighter, respectively.
-A list above aninternal node indicates the outcomes that are still possible before the weighing indicated inside the node.
-For example, before the first weighing either all the coinsare genuine (=) or each coin is either heavier (+) or lighter (−).
-
-
-
-Talking to myself
-
-Thurs 14 March:
----------------
-
-So the issue I am trying to solve is why (Pair 3 0) has no solution;
-
-> w1 = (Pair 3 0)
-> ww1 = head $ weighings w1
-
-ww1 = TPair (1,0) (1,0)
-
-If I run:
-
-> o1 = outcomes w1 ww1
-
-I get: [Triple 1 1 1,Pair 1 0,Triple 1 1 1]
-
-The first question is, why is that wrong?
