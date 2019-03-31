@@ -342,20 +342,6 @@ deemed unproductive.
 
 9. Define a predicate
 
-We could have defined final to just check u == 0 and assuming the function was called in a
-valid state based on our definition (n>2) then all would be fine. But I believe it is more
-correct to return 'false' if we are given `final (State 0 0)` or `final (State 0 1)`.
-
-Looking at the tree, it is clear that a leaf State if:
-	1) when it is Pair, u=0 and g=n
-	2) when it is a Triple, (l=0 and h=1) or (l=1 and h=0) and g=(n-1)
-
-The function is defined such that it has no context as to how many coins there are overall, so we cannot check
-on the values of g to see that they are equal to n-1 or n.
-
-TODO: Similarly with the Triple case, we cannot identify the counterfeit coin with only two, so we check the total number of coins.
-TODO: Check if we want to make checks on the provided states before answering 'final'
-
 > final :: State -> Bool
 > final Invalid = True
 > final (Pair u g) 		= u == 0
@@ -365,6 +351,22 @@ TODO: Check if we want to make checks on the provided states before answering 'f
 > 				allGenuine = l == 0 && h == 0 && g /= 0
 
 TODO: rephrase below.
+
+
+We could have defined final to just check u == 0 and assuming the function was called in a
+valid state based on our definition (n>2) then all would be fine. But I believe it is more
+correct to return 'false' if we are given `final (State 0 0)` or `final (State 0 1)`.
+
+Looking at the tree, it is clear that a leaf State if:
+  1) when it is Pair, u=0 and g=n
+  2) when it is a Triple, (l=0 and h=1) or (l=1 and h=0) and g=(n-1)
+
+The function is defined such that it has no context as to how many coins there are overall, so we cannot check
+on the values of g to see that they are equal to n-1 or n.
+
+TODO: Similarly with the Triple case, we cannot identify the counterfeit coin with only two, so we check the total number of coins.
+TODO: Check if we want to make checks on the provided states before answering 'final'
+
 We can make more checks on the value of g so that we reject
 We could have defined final to just check u == 0 and assuming the function was called in a
 valid state based on our definition (n>2) then all would be fine. But I believe it is more
