@@ -73,7 +73,7 @@ First, let us discuss why the first two outcomes are invalid:
   so how are you telling me that all are genuine?
 
 
-mkTriple
+MkTriple
 --------
 
 Following on from the above, it is impossible to have a state (Triple 0 0 x) because that would imply all are genuine.
@@ -90,8 +90,8 @@ Going forward, there should be no bare Triple constructors, instead mkTriple is 
 >   | otherwise = Triple l h g
 
 
-outcome
--------
+Outcomes
+--------
 
 Outcome is the critical function to get right in this problem.
 
@@ -179,7 +179,7 @@ TODO: figure out how best to neaten this up
 >     h' = b + e
 
 
-weighings
+Weighings
 ---------
 
 Next, we define the function weighings returning all sensible weighing
@@ -252,7 +252,7 @@ then filter TTrip combinations that do not satisfy the below conditions:
 - and the lexical ordering using (a,b,c) <= show (d,e,f)
 
 Note that the set `choices k (l, h, g)` is generated once only and stored in 'ch', avoiding
-repeated computations and saving time.
+repeated computations and saving time. TODO: perhaps mention that this saves xx% time.
 
 > weighings (Triple l h g) = [
 >     TTrip (a,b,c) (d,e,f)
@@ -278,7 +278,16 @@ repeated computations and saving time.
 >   ]
 
 
-6. Complete the definition of the ordering on State.
+Ordering
+--------
+
+> instance Ord State where
+>   compare Invalid         _                 = LT
+>   compare _               Invalid           = GT
+>   compare (Triple _ _ _)  (Pair _ _)        = LT
+>   compare (Pair _ _) (    Triple _ _ _)     = GT
+>   compare (Pair _ g1)     (Pair _ g2)       = compare g2 g1
+>   compare (Triple _ _ g1) (Triple _ _ g2)   = compare g2 g1
 
 We implement the function compare on our State datatype to allow
 the implementation to judge whether certain tests help to progress towards a solution.
@@ -293,27 +302,36 @@ the implementation to judge whether certain tests help to progress towards a sol
 - Same as above but for comparing a pair of Triples. The Triple with most genuines is
   closer to the solution, thus Triple _ _ g1 `compare` Triple _ _ g2 = compare g2 g1
 
-> instance Ord State where
->   compare Invalid _                         = LT
->   compare _ Invalid                         = GT
->   compare (Triple _ _ _) (Pair _ _)         = LT
->   compare (Pair _ _) (Triple _ _ _)         = GT
->   compare (Pair _ g1) (Pair _ g2)           = compare g2 g1
->   compare (Triple _ _ g1) (Triple _ _ g2)   = compare g2 g1
 
+Productive
+----------
 
-7. Define a predicate productive
+The function productive returns True when all outcomes from a Test on a State move us closer
+to the solution.
+
+To implement this, we generate the list of outcomes of the State-Test pair
+and check whether all state outcomes are strictly less than the original state.
+
+We use the higher-order function `all` from Prelude which takes in a function (a->Bool) and a list,
+and applies the function on each element of the list producing a boolean. If all returned booleans are
+true `all` returns True, otherwise it returns False.
+
+The function applied to each outcome is `(<s)` shorthand for `(\x -> x < s)`.
 
 > productive :: State -> Test -> Bool
 > productive s t = all (<s) $ outcomes s t
 
-8. Finally, we fulfill the third criterion by keeping only the productive tests
-among the possible weighings; define the function tests to do this.
+
+Tests
+-----
+
+Tests returns a list of all productive weighings for a State s.
+With `weighings` as well as `productive` implemented, this function
+becomes trivial: we simply get all weighings then filter out all those
+deemed unproductive.
 
 > tests :: State -> [Test]
-> tests s = filter (\w -> productive s w) $ weighings s
-
-TODO: replace the above with (productive s) and explain why it works.
+> tests s = filter (productive s) $ weighings s
 
 
 4. Decision trees
