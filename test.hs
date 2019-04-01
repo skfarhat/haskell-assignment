@@ -68,3 +68,29 @@ runTests = do
   putStr (testResultStr "testsTest1     " testsTest1)
 
 -- ==============================================================================
+
+
+
+-- Found this lying around, not sure if useful, check later.
+
+s1 = Pair 12 0
+tt = tests s1
+newTrees t = map mktree $ outcomes s1 t
+f1 t = Node t $ newTrees t
+
+minHeightOrMe :: Tree -> [Tree] -> Tree
+minHeightOrMe t [] = t
+minHeightOrMe _ s = minHeight s
+
+-- Used for debugging
+
+traceIt s = trace ("->" ++ show s)
+traceIt1 s = trace ("--> " ++ show s ++ "\n=================\n")
+
+mktreeDebug :: State -> Tree
+mktreeDebug s
+    | final s || (length allTests == 0) = Stop s
+    | otherwise = traceIt s $ minHeight $ map testToTree allTests
+      where
+        allTests = tests s
+        testToTree t = Node t $ map mktreeDebug $ outcomes s t
