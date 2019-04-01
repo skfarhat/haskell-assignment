@@ -333,98 +333,86 @@ deemed unproductive.
 > tests :: State -> [Test]
 > tests s = filter (productive s) $ weighings s
 
+TODO: mention that we can do this because of currying.
+Was it currying? Check.
 
 4. Decision trees
 =================
 
+
 > data Tree = Stop State | Node Test [Tree]
 > 		deriving Show
 
-9. Define a predicate
+
+Final
+-----
+
+In this coin problem, we set out to identify the counterfeit coin (if it were present) and determine whether it was lighter or heavier than the remaining genuine coins. Our final states are:
+
+* (Pair 0 x): no counterfeit coins were found. Zero unknowns and the rest genuines
+* (Triple 1 0 x): we found a single light counterfeit coin
+* (Triple 0 1 x): we found a single heavy counterfeit coin
+
+From the above, we can define the function `final` to return True if we reach a final state.
 
 > final :: State -> Bool
-> final Invalid = True
-> final (Pair u g) 		= u == 0
-> final (Triple l h g) 	= foundSingleFake || allGenuine
-> 			where
-> 				foundSingleFake = (l + h == 1) && (l * h == 0)
-> 				allGenuine = l == 0 && h == 0 && g /= 0
+> final Invalid         = True
+> final (Pair u _)      = u == 0
+> final (Triple l h _)  = foundSingleFake || allGenuine
+>   where
+>     foundSingleFake   = (l + h == 1) && (l * h == 0)
+>     allGenuine        = l == 0 && h == 0
 
-TODO: rephrase below.
+As our `final` function ignores the number of genuine coins provided merely checking the unknowns in a Pair state,
+and the lights and heavies in the Triple state, it may return odd results when presented with invalid States, such as
+`(Pair 0 0)` for which it will return `True`, `Triple (1 0 1)` for which it will return `True` and any state with invalid
+number of genuine coins. This is understood and expected.
 
+Height
+------
 
-We could have defined final to just check u == 0 and assuming the function was called in a
-valid state based on our definition (n>2) then all would be fine. But I believe it is more
-correct to return 'false' if we are given `final (State 0 0)` or `final (State 0 1)`.
+To return the height of the tree, we simply return 1 + the maximum height of each of its child subtrees.
+So we,
 
-Looking at the tree, it is clear that a leaf State if:
-  1) when it is Pair, u=0 and g=n
-  2) when it is a Triple, (l=0 and h=1) or (l=1 and h=0) and g=(n-1)
+1) apply the function height on each of the node's subtrees: map height children
+2) return 1 + the maximum of height returned from the children: 1 + maximum (map height children)
 
-The function is defined such that it has no context as to how many coins there are overall, so we cannot check
-on the values of g to see that they are equal to n-1 or n.
-
-TODO: Similarly with the Triple case, we cannot identify the counterfeit coin with only two, so we check the total number of coins.
-TODO: Check if we want to make checks on the provided states before answering 'final'
-
-We can make more checks on the value of g so that we reject
-We could have defined final to just check u == 0 and assuming the function was called in a
-valid state based on our definition (n>2) then all would be fine. But I believe it is more
-correct to return 'false' if we are given `final (State 0 0)` or `final (State 0 1)`.
-
-final (Pair u g) 		  = g > 1 && u == 0
-final (Triple l h g) 	= g > 1 && (l + h == 1) && (l * h == 0)
-
-to determine whether a State is final—that is, whether it has determined
-either that all coins or genuine, or that one coin is fake, and in the latter case
-which coin and whether it is light or heavy.
-
-10. Define a function height
+As with all recursive functions, we need a base case to terminate at, this happens when we reach a Stop node
+whose height is zero.
 
 > height :: Tree -> Int
 > height (Stop _) = 0
-> height (Node _ nodes) = 1 + maximum (map height nodes)
+> height (Node _ children) = 1 + maximum (map height children)
 
 
-11. Define a function
+MinHeight
+---------
+
+Next we define a function `minHeight` to return the tree with the minimum height.
+
+We use the higher-order function `minimumBy` which accepts a comparator function
+telling it how to compare two elements, and a list of elements from which the minimum
+will be returned.
+
+Our where function defines the comparator `treeCmp` which given two tree instances,
+returns LT, EQ, or GT based on which has the shorter/longer height.
 
 > minHeight :: [Tree] -> Tree
 > minHeight trees = minimumBy treeCmp trees
-> 		where
-> 			treeCmp t1 t2 = height t1 `compare` height t2
+> 		where treeCmp t1 t2 = height t1 `compare` height t2
 
-An alternative definition (TODO: check why elemIndex is failing)
+We could have defined minimumBy ourselves:
+
+TODO: explain what our own implementation is.
 
 > -- minHeight' :: [Tree] -> Tree
-> -- minHeight' trees = trees !! elemIndex smallest
+> -- minHeight' trees = trees !! (fromJust $ elemIndex smallest)
 > -- 		where smallest = minimum $ map height trees
 
 that returns the tree of minimum height from a non-empty list of trees.
 
-12. Hence define a function
-
-> s1 = Pair 12 0
-> tt = tests s1
-> newTrees t = map mktree $ outcomes s1 t
-> f1 t = Node t $ newTrees t
-
-> minHeightOrMe :: Tree -> [Tree] -> Tree
-> minHeightOrMe t [] = t
-> minHeightOrMe _ s = minHeight s
-
-Used for debugging
-
-> traceIt s = trace ("->" ++ show s)
-> traceIt1 s = trace ("--> " ++ show s ++ "\n=================\n")
-
-> mktreeDebug :: State -> Tree
-> mktreeDebug s
->     | final s || (length allTests == 0) = Stop s
->     | otherwise = traceIt s $ minHeight $ map testToTree allTests
->       where
->         allTests = tests s
->         testToTree t = Node t $ map mktreeDebug $ outcomes s t
-
+MkTree
+------
 
 One that is cleaner:
 
