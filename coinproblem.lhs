@@ -414,7 +414,17 @@ that returns the tree of minimum height from a non-empty list of trees.
 MkTree
 ------
 
-One that is cleaner:
+mkTree must return the shortest decision tree for a provided state.
+
+A given state may have many productive tests performed on it, each test
+leading to different decision trees, some shorter than others.
+
+It is clear that minHeight needs to be used somehow in our implementation,
+
+minHeight listOfTrees
+
+where `listOfTrees` consists of a list of trees each rooted at with a productive test
+for state s.
 
 > mktree :: State -> Tree
 > mktree s
