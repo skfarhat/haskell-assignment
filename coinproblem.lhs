@@ -152,7 +152,7 @@ For the Triple-TTrip case, things are a little more complicated:
     - g + (a + d + b + e)
   Note, that c and f are not mentioned because we sort of did
   g - (c + f) + (c + f) = g, when we brought them back.
-- When the left pan is ligher than the right pan (left outcome = (a,b,c) < (d,e,f))
+- When the left pan is lighter than the right pan (left outcome = (a,b,c) < (d,e,f))
     - all suspect-lights from the left pan 'a' go to the light bucket
     - all suspect-heavies from the right pan 'e' go the heavy bucket
     - the rest, and I mean *all the rest* goes to the genuine bucket.
@@ -183,9 +183,9 @@ Weighings
 ---------
 
 Next, we define the function weighings returning all sensible weighing
-possiblities given a number of coins.
+possibilities given a number of coins.
 
-For a Pair-TPair test, we have the following contraints:
+For a Pair-TPair test, we have the following constraints:
 
 1. Both pans must have the same number of coins: a + b = c + d
 2. One of the pans must not have genuine coins: b * d = 0
@@ -241,7 +241,7 @@ in the output of `weighings (Pair 4 1)`.
 >   where m = u `div` 2
 
 The Triple case is trickier and requires the subsidiary choices (defined further below).
-We perform the cartesian product of the set `choices k (l,h,g)` with itself and
+We perform the Cartesian product of the set `choices k (l,h,g)` with itself and
 then filter TTrip combinations that do not satisfy the below conditions:
 
 - c*f = 0
@@ -423,29 +423,29 @@ MkTree
 >         test2Tree t = Node t $ map mktree $ outcomes s t
 
 
-The function can be implemented by taking each segment from the statement 
-and writing the functional code addressing it: 
+The function can be implemented by taking each segment from the statement
+and writing the functional code addressing it:
 
 _Stop if s is final_
-Our guard statement 
+Our guard statement
 | final s = Stop s
-handles this. This is the base case for the recursive `mktree` function. 
+handles this. This is the base case for the recursive `mktree` function.
 
 _otherwise generate all possible productive tests with tests s_
-`testList = tests s` 
+`testList = tests s`
 
 _recursively build trees from the outcomes of each such test_
-We create a function test2Tree which, given a test `t` and the state s 
-  (through the scope) constructs and returns a node with arguments: 
+We create a function test2Tree which, given a test `t` and the state s
+  (through the scope) constructs and returns a node with arguments:
   1. the test `t`
-  2. a list of trees each built from one of the outcomes of test `t` on state `s`. 
-    We apply the function `mktree` (recursively) on each outcome ending up with: 
-    `map mktree $ outcomes s t` 
+  2. a list of trees each built from one of the outcomes of test `t` on state `s`.
+    We apply the function `mktree` (recursively) on each outcome ending up with:
+    `map mktree $ outcomes s t`
 And the overall function `test2Tree t = Node t $ map mktree $ outcomes s t`
 
 _pick the one that yields the best tree overall._
-Finally we glue the different components together@ 
-  - apply `test2Tree` to each test in testList, this returns a list 
+Finally we glue the different components together@
+  - apply `test2Tree` to each test in testList, this returns a list
   - return the tree with the shortest height from the above list
 
 
@@ -459,36 +459,89 @@ Finally we glue the different components together@
 > heightH (StopH s) = 0
 > heightH (NodeH h t ts) = h
 
+
+TreeH2tree
+----------
+
 > treeH2tree :: TreeH -> Tree
 > treeH2tree (StopH s) = Stop s
-> treeH2tree (NodeH h t ts) = Node t (map treeH2tree ts)
+> treeH2tree (NodeH h t ts) = Node t $ map treeH2tree ts
+
+TODO: check whether it is node-type/instance?
+
+We use pattern matching to detect the node type here.
+
+For a StopH node, we return the equivalent Stop node (they both have the same state),
+so `treeH2tree (StopH s) = Stop s`
+
+For a NodeH node, we convert it to Node dropping the cached height,
+and then calling treeH2tree on each of its child nodes:
+`treeH2tree (NodeH h t ts) = Node t $ map treeH2tree ts`
+
+
+NodeH
+------
 
 > nodeH :: Test -> [TreeH] -> TreeH
 > nodeH t children = NodeH h t children
->       where
->         h = 1 + (maximum $ map heightH children)
+>   where h = 1 + (maximum $ map heightH children)
+
+This is the crucial differentiator between Tree and TreeH.
+When creating a NodeH, we label it with its height to avoid
+repetitive computations later on.
+
+The height of a node is one plus the maximum height of it children
+`h = 1 + maximum $ map heightH children`.
+
+
+Tree2treeH
+----------
 
 > tree2treeH :: Tree -> TreeH
 > tree2treeH (Stop s) = StopH s
 > tree2treeH (Node t children) = nodeH t $ map tree2treeH children
 
+Again we use pattern matching to detect the node type here.
+
+For a Stop node, we return the equivalent StopH node with the same state.
+
+For a (Node t children), we apply the function `tree2treeH` on all of its children (recursion)
+and the result is a list of TreeHs. At this point we just call our smart-constructor passing
+the test `t` and the list of TreeHs. The smart-constructor takes care of computing the height and
+returning a NodeH. That's the point of 'smart-constructor' it does the dirty-work of this function.
+
 TODO: convince yourself that heightH . tree2treeH = height
 
-> mktreeHTrace :: State -> TreeH
-> mktreeHTrace s
->     | final s = StopH s
->     | otherwise = traceIt1 s $ minimumBy treeCmp $ map testToTree allTests
->         where
->           allTests = tests s
->           testToTree t = nodeH t (map mktreeHTrace $ outcomes s t)
->           treeCmp t1 t2 = heightH t1 `compare` heightH t2
+```
+height (Stop s) = 0
+(heightH . tree2treeH) $ Stop s = heightH (tree2treeH $ Stop s)
+                                = heightH (StopH s)
+                                = 0                             -- matches the pattern in heightH)
+```
 
-TODO:
-NOTE: I think this is wrong. we do minimumBy, but these should be the
-children of the papa node.
+```
+(heightH . tree2treeH) $ Node t children
+= heightH (tree2treeH $ Node t [N1, N2, N3])                                  -- tree2treeH applied on (Node t children)
+= heightH (nodeH t $ map tree2treeH [N1, N2, N3])                             -- unwind the function tree2treeH
+= heightH (NodeH (1 + maximum $ map heightH [N1, N2, N3])                     -- unwind the function nodeH
+= heightH (NodeH (1 + maximum $ [(heightH N1), (heightH N2), (heightH N3)])   -- apply map to each element in the list
 
-TODO: minimumBy treeCmp is repeated twice, create a special function
-for it.
+Since (heightH (NodeH h t c)) = h
+the above simplifies to
+
+= (1 + maximum [(heightH N1), (heightH N2), (heightH N3)])
+```
+
+which is effectively the same as the implementation of height, which when unwound
+becomes:
+
+```
+= (1 + maximum [(height N1), (height N2), (height N3)])
+```
+
+
+MkTreeH
+-------
 
 > mktreeH :: State -> TreeH
 > mktreeH s
@@ -499,6 +552,8 @@ for it.
 >           testToTree t = nodeH t (map mktreeH $ outcomes s t)
 >           treeCmp t1 t2 = heightH t1 `compare` heightH t2
 
+TODO/NOTE: I think this is wrong. we do minimumBy, but these should be the children of the papa node.
+TODO: minimumBy treeCmp is repeated twice, create a special function for it.
 
 6. A greedy solution
 ===================
