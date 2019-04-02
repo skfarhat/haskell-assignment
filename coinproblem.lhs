@@ -414,31 +414,39 @@ that returns the tree of minimum height from a non-empty list of trees.
 MkTree
 ------
 
-mkTree must return the shortest decision tree for a provided state.
-
-A given state may have many productive tests performed on it, each test
-leading to different decision trees, some shorter than others.
-
-It is clear that minHeight needs to be used somehow in our implementation,
-
-minHeight listOfTrees
-
-where `listOfTrees` consists of a list of trees each rooted at with a productive test
-for state s.
-
 > mktree :: State -> Tree
 > mktree s
-> 		| final s = Stop s
-> 		| otherwise = minHeight $ map testToTree allTests
-> 			where
-> 				allTests = tests s
-> 				testToTree t = Node t $ map mktree $ outcomes s t
+>     | final s = Stop s
+>     | otherwise = minHeight $ map test2Tree testList
+>       where
+>         testList = tests s
+>         test2Tree t = Node t $ map mktree $ outcomes s t
 
-To find the minimum tree,
 
-s = Pair 12 0
-t = tests s
-putStr $ (unlines) $ map (show . outcomes s) t
+The function can be implemented by taking each segment from the statement 
+and writing the functional code addressing it: 
+
+_Stop if s is final_
+Our guard statement 
+| final s = Stop s
+handles this. This is the base case for the recursive `mktree` function. 
+
+_otherwise generate all possible productive tests with tests s_
+`testList = tests s` 
+
+_recursively build trees from the outcomes of each such test_
+We create a function test2Tree which, given a test `t` and the state s 
+  (through the scope) constructs and returns a node with arguments: 
+  1. the test `t`
+  2. a list of trees each built from one of the outcomes of test `t` on state `s`. 
+    We apply the function `mktree` (recursively) on each outcome ending up with: 
+    `map mktree $ outcomes s t` 
+And the overall function `test2Tree t = Node t $ map mktree $ outcomes s t`
+
+_pick the one that yields the best tree overall._
+Finally we glue the different components together@ 
+  - apply `test2Tree` to each test in testList, this returns a list 
+  - return the tree with the shortest height from the above list
 
 
 5 Caching heights
