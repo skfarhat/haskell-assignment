@@ -646,6 +646,10 @@ Note that the function call will fail if it is provided a Stop node.
 > getTest :: Tree -> Test
 > getTest (Node t _) = t
 
+> getTestH :: TreeH -> Test
+> getTestH (NodeH _ t _) = t
+
+
 We can then run:
 
 s3 = Pair 8 0
@@ -662,19 +666,84 @@ we could reimplement mktree with mktree':
 
 --------------------------------------------------------
 
+MkTreeG
+--------
+
 > mktreeG :: State -> TreeH
 > mktreeG s
->     | final s = StopH s
->     | otherwise = nodeH optimalTest trees
->         where
->           optimalTest = head $ bestTests s
->           trees = map mktreeG $ outcomes s optimalTest
+>   | final s = StopH s
+>   | otherwise = nodeH bestTest trees
+>     where
+>       bestTest = head $ bestTests s
+>       trees = map mktreeG $ outcomes s bestTest
 
-19. Define a function mktreesG :: State → [TreeH]
+The structure of our function `mktreeG` is not too dissimilar to that of `mktree`.
+
+For a given list of tests, generate the outcomes and create tree nodes from those outcomes.
+
+The difference here is that `bestTest` returns optimal tests (ones that are guaranteed to lead
+to short trees) whereas in `mktree` we had to generate all trees, compute their heights and
+pick the shortest. Since `bestTests` returns a list of optimal tests, we can pick whichever and
+create a decision tree from it (we pick the first using `head`).
+
+To quickly go through the function again:
+
+1) If the state is final, generate a leaf: StopH
+2) otherwise, create a nodeH using our smart-constructor.
+   The smart constructor takes in
+   a) a test which is `bestTest`: the first optimal test we find
+   b) a list of child nodes, which are all roots to decision trees representing the outcome states
+      that resulted from `outcomes s bestTest`
+      These child decision trees are created recursively (`mktreeG`) call on each outcome state.
+
+MktreesG
+--------
 
 > mktreesG :: State -> [TreeH]
-> mktreesG s = map (\t -> nodeH t (map mktreeG $ outcomes s t)) $ bestTests s
+> mktreesG s = map test2Tree $ bestTests s
+>   where test2Tree t = nodeH t (map mktreeG $ outcomes s t)
 
-There is only one.
+The above mktreesG, creates a tree for each optimal test coming out of `bestTests s`: it is clear
+since mktreesG merely applies test2Tree to each element in `bestTests s`.
+
+The function `test2Tree` creates a node from the provided test `t`: to create a tree we pass the test
+to the smart-constructor nodeH, then create a tree from each outcome of that test on the state `s`.
+
 (Recall that Data.List.nub removes duplicates from a list. Hence, all those trees have height 3.) How many minimum-height decision trees are there for n = 12?
 
+One only:
+CoinProblem> length $ mktreesG (Pair 12 0)
+1
+
+CoinProblem> mktreesG (Pair 12 0)
+[NodeH 3 (TPair (4,0) (4,0)) [
+  NodeH 2 (TTrip (0,2,1) (1,2,0))
+    [
+    NodeH 1 (TTrip (0,0,1) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 0 1 11),StopH Invalid],
+    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),StopH (Triple 1 0 11),StopH (Triple 1 0 11)],
+    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 1 0 11),StopH (Triple 0 1 11)]
+    ],
+  NodeH 2 (TPair (0,3) (3,0))
+    [
+    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 0 1 11),StopH (Triple 0 1 11)],
+    NodeH 1 (TPair (0,1) (1,0)) [StopH (Triple 0 1 11),StopH (Pair 0 12),StopH (Triple 1 0 11)],
+    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),StopH (Triple 1 0 11),StopH (Triple 1 0 11)]
+    ],
+  NodeH 2 (TTrip (0,2,1) (1,2,0))
+    [
+    NodeH 1 (TTrip (0,0,1) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 0 1 11),StopH Invalid],
+    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),StopH (Triple 1 0 11),StopH (Triple 1 0 11)],
+    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 1 0 11),StopH (Triple 0 1 11)]
+    ]
+  ]
+]
+
+
+CoinProblem> map getTestH $ mktreesG (Pair 8 0)
+[TPair (2,0) (2,0),TPair (3,0) (3,0),TPair (4,0) (4,0)]
+
+CoinProblem> map getTestH $ mktreesG (Pair 12 0)
+[TPair (4,0) (4,0)]
+
+CoinProblem> (map getTest $ mktrees (Pair 8 0 )) == (map getTestH $ mktreesG (Pair 8 0))
+True
