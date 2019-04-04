@@ -543,25 +543,48 @@ becomes:
 MkTreeH
 -------
 
-> mktreeH :: State -> TreeH
-> mktreeH s
->     | final s = StopH s
->     | otherwise = minimumBy treeCmp $ map testToTree allTests
->         where
->           allTests = tests s
->           testToTree t = nodeH t (map mktreeH $ outcomes s t)
->           treeCmp t1 t2 = heightH t1 `compare` heightH t2
+With the function `tree2treeH` we can very simply implement `mktreeH` as the composition of
+`tree2treeH` with `mktree`.
 
-TODO/NOTE: I think this is wrong. we do minimumBy, but these should be the children of the papa node.
-TODO: minimumBy treeCmp is repeated twice, create a special function for it.
+> mktreeH :: State -> TreeH
+> mktreeH = tree2treeH . mktree
+
+It is also possible to implement mktreeH similarly to `mktree` replacing:
+
+* Stop with StopH
+* height with heightH
+* Node constructor with the smart-constructor `nodeH`
+
+Conceptually, `mktreeH'` below should perform better than `mktreeH` since the latter,
+builds an entire Tree and then converts it to TreeH, whereas the former just builds
+it once. Testing the performance difference however does not yield sufficiently
+convincing improvements:
+
+: set +s
+: mktreeH  (Pair 8 0) --> (7.25 secs, 5,331,468,040 bytes)
+: mktreeH' (Pair 8 0) --> (7.02 secs, 5,263,940,664 bytes)
+
+: mktreeH  (Pair 9 0) --> (41.80 secs, 31,342,052,720 bytes)
+: mktreeH'  (Pair 9 0) --> (41.24 secs, 30,946,184,648 bytes)
+
+Additionally, as has been pointed out in the course, program performance is
+not an evaluation criteria.
+
+> mktreeH' s
+>   | final s = StopH s
+>   | otherwise = minHeightH $ map testToTree allTests
+>     where
+>       allTests = tests s
+>       testToTree t = nodeH t (map mktreeH' $ outcomes s t)
+>       minHeightH = minimumBy (\t1 t2 -> heightH t1 `compare` heightH t2)
+
 
 6. A greedy solution
-===================
+====================
 
 TODO: check if this is meant to be an and or an or
 NOTES:
 - why is it ab?
-- are we sure ^ = &&
 
 > optimal :: State -> Test -> Bool
 > optimal (Pair u g) (TPair (a, b) (ab, 0))
