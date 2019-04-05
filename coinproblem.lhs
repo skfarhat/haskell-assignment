@@ -1,3 +1,6 @@
+% Functional Programming Assignment (FPR)
+% Sami Farhat
+% 16th April 2019
 
 * TODO: the lines cut in the pdf output - need to prevent that.
 * TODO: be consistent as to whether there are spaces betwen the pluses
@@ -9,7 +12,6 @@ all 3 of them (a parametrized one)
 
 > module CoinProblem where
 > import Data.List (minimumBy, elemIndex)
-> import Debug.Trace
 
 2. States and tests
 ===================
@@ -134,9 +136,9 @@ For the Pair-TPair case:
 
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >   | valid (Pair u g) (TPair (a,b) (c,d)) = [
->       mkTriple  a c (g+u-us),
->       Pair    (u-us) (g+us),
->       mkTriple  c a (g+u-us)
+>       mkTriple  a       c   (g + u - us),
+>       Pair      (u - us)    (g + us),
+>       mkTriple  c       a   (g + u - us)
 >     ]
 >   | otherwise = []
 >   where us = a + c
@@ -169,9 +171,9 @@ TODO: figure out how best to neaten this up
 
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
->       mkTriple a      e      $ g+(l-a)+(h-e),
->       mkTriple (l-l') (h-h') $ g+l'+h',
->       mkTriple d      b      $ g+(l-d)+(h-b)
+>       mkTriple a        e         $ g + (l - a) + (h - e),
+>       mkTriple (l - l') (h - h')  $ g + l' + h',
+>       mkTriple d        b         $ g + (l - d) + (h - b)
 >     ]
 >   | otherwise = []
 >   where
@@ -232,11 +234,11 @@ in the output of `weighings (Pair 4 1)`.
 
 > weighings :: State -> [Test]
 > weighings (Pair u g) = [
->     TPair (a, b) (a+b, 0)
+>     TPair (a, b) (a + b, 0)
 >       | a <- [0..m],
 >         b <- [0..g],
->         a+b /= 0,
->         2*a+b <= u
+>         a + b /= 0,
+>         2 * a + b <= u
 >     ]
 >   where m = u `div` 2
 
@@ -260,21 +262,22 @@ repeated computations and saving time. TODO: perhaps mention that this saves xx%
 >         let ch = choices k (l, h, g),
 >         (a,b,c) <- ch,
 >         (d,e,f) <- ch,
->         c*f == 0,
->         a+b+c == d+e+f,
->         b+e <= h,
->         c+f <= g,
->         a+d <= l,
->         show (a,b,c) <= show (d,e,f)
+>         c * f         == 0,
+>         a + b + c     == d + e + f,
+>         b + e         <= h,
+>         c + f         <= g,
+>         a + d         <= l,
+>         show (a,b,c)  <= show (d,e,f)
 >     ]
->     where kr = (l+h+g) `div` 2
+>     where kr = (l + h + g) `div` 2
 
 > choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
 > choices k (l, h, g) = [
->   (i,j,k-i-j)
+>   (i, j, r)
 >     | i <- [0..l],
 >       j <- [0..h],
->       0 <= k-i-j && k-i-j <= g
+>       let r = k - i - j,
+>       0 <= r && r <= g
 >   ]
 
 
