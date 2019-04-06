@@ -15,16 +15,16 @@ Valid
 -----
 
 The 'valid' function below returns True only when its arguments are of types
-- Pair and TPair
-- Triple and TTrip
+- `Pair` and `TPair`
+- `Triple` and `TTrip`
 
 and when all below booleans are true:
 
-- allPositive : all integers in Pair, Triple, TPair, TTrip instances are positive.
-- sufficientCoins:  for both State-Test combinations, there must be at least as many coins
-                    of each type in the State than there are in the Test.
-- equalPans: the provided test must have an equal number of coins on both sides of the scale
-- nonZero: the number of coins in each pan of the test is non-zero, since you also
+- `allPositive`: all integers in Pair, Triple, TPair, TTrip instances are positive.
+- `sufficientCoins`: for both State-Test combinations, there must be at least as many
+                   coins of each type in the State than there are in the Test.
+- `equalPans`: the provided test must have an equal number of coins on both sides of the scale
+- `nonZero`: the number of coins in each pan of the test is non-zero, since you also
             "learn nothing from weighing zero with zero".
             Note that it is sufficient to check sum[a,b] == 0 without sum[c,d] == 0
             because we have equalPans that enforces the latter (same for Triple case).
@@ -52,33 +52,40 @@ and when all below booleans are true:
 3. Choosing and conducting a test
 ================================
 
-Working through the coin problem, it is evident that some states are impossible to reach
-and confirmation of this can be found in the coversheet section discussing the outcomes of
-State=(Triple 3 0 6) with Test=(TTrip (0, 0, 3) (3, 0, 0)) which are [Triple 0 0 9,Triple 0 0 9,Triple 3 0 6].
+Working through the coin problem, it is evident that some states are impossible to
+reach and confirmation of this can be found in the coversheet section discussing the
+outcomes of State=(Triple 3 0 6) with Test=(TTrip (0, 0, 3) (3, 0, 0))
+which are [Triple 0 0 9,Triple 0 0 9,Triple 3 0 6].
 
 First, let us discuss why the first two outcomes are invalid:
 
-- The leftmost outcome occurs when the 3 genuine coins weighed less than the 3 coins that were once in a light pan (0,0,3) < (3,0,0).
-  This outcome is impossible because in a TTrip test, a pan containing all genuine coins cannot weigh less than a pan with
-  no suspect-heavy coins. Genuine coins are on the lighter side of the scale when weighed against
+- The leftmost outcome occurs when the 3 genuine coins weighed less than the 3 coins
+  that were once in a light pan (0,0,3) < (3,0,0). This outcome is impossible because
+  in a TTrip test, a pan containing all genuine coins cannot weigh less than a pan
+  with no suspect-heavy coins. Genuine coins are on the lighter side of the scale
+  when weighed against:
     (a) unknown coins in a TPair test
     (b) suspect-heavy coins in a TTrip test
-- The middle outcome occurs if the pan with 3 genuines balances with the pan with 3 suspect-lights (0,0,3) == (3,0,0)
-  Normally, it is possible for genuines to balance with suspects but in this case a balance implies all coins are genuine,
-  which is impossible in a Triple state. We have already seen the scales tip to one end in our of the earlier tests,
-  so how are you telling me that all are genuine?
+- The middle outcome occurs if the pan with 3 genuines balances with the pan with
+  3 suspect-lights (0,0,3) == (3,0,0). Normally, it is possible for genuines to
+  balance with suspects but in this case a balance implies all coins are genuine,
+  which is impossible in a Triple state. We have already seen the scales tip to
+  one end in our of the earlier tests, so how are you telling me that all are genuine?
 
 
 MkTriple
 --------
 
-Following on from the above, it is impossible to have a state (Triple 0 0 x) because that would imply all are genuine.
+Following on from the above, it is impossible to have a state (Triple 0 0 x)
+because that would imply all are genuine.
 
 We create a function mkTriple to wrap around the Triple constructor.
-The function checks the 'l' and 'h' parameters; if both are zero it returns an Invalid state instead of an invalid Triple state.
+The function checks the 'l' and 'h' parameters; if both are zero it returns
+an Invalid state instead of an invalid Triple state.
 Hence, mkTriple (0 0 9) = Invalid.
 
-Going forward, there should be no bare Triple constructors, instead mkTriple is employed.
+Going forward, there should be no bare Triple constructors, instead
+mkTriple is employed.
 
 > mkTriple :: Int -> Int -> Int -> State
 > mkTriple l h g
@@ -95,13 +102,15 @@ We will first outline the unbreakable ground-rules before proceeding to other de
 
 For both state-test combinations (Pair-TPair and Triple-TTrip):
 
-(1) An empty list is returned if the state-test combination is invalid according to our definition of 'valid'
-(2) The genuine coins used in both pans of the test end up in the genuine bucket of the outcomes.
-    For instance, in a TPair (a,b) (c,d) both b and d will end up in the genuine bucket of all outcome states,
-    and for TTrip (a,b,c) (d,e,f), both c and f end up in the genuine bucket of all outcome states.
-(3) Each of the outcomes must have the same number of coins in total as the starting state (of course!).
-    We will compute this sum in our explanation to showcase that this invariant is held - but also for sanity
-    checking our implementation.
+(1) An empty list is returned if the state-test combination is invalid according to
+    our definition of 'valid'
+(2) The genuine coins used in both pans of the test end up in the genuine bucket of
+    he outcomes. For instance, in a TPair (a,b) (c,d) both b and d will end up in
+    the genuine bucket of all outcome states, and for TTrip (a,b,c) (d,e,f),
+    both c and f end up in the genuine bucket of all outcome states.
+(3) Each of the outcomes must have the same number of coins in total as the starting
+    state (of course!). We will compute this sum in our explanation to showcase that
+    this invariant is held - but also for sanity checking our implementation.
 
 The signature of outcomes is:
 
@@ -109,20 +118,18 @@ The signature of outcomes is:
 
 For the Pair-TPair case:
 
-- If the pans balance (middle outcome), then we know that all coins on the scale are genuines.
-  The unknowns ('a' and 'c') join the rest of the genuines, so we remove (us=a+c) from the unknowns and add them
-  to the genuines (g+us)
-- When the scale tips to one side, we know there's a counterfeit
-  but we don't know if the counterfeit is heavier or lighter,
-  so we move all those unknown on the heavy side to the
-  suspect-heavy bucket ('h') and all those unknown on the
-  light side to the suspect-light bucket ('l').
-  As per (1) all genuines go back to the genuine pile.
-  When (a,b) < (c,d), we move
+- If the pans balance (middle outcome), then we know that all coins on the scale
+  are genuines. The unknowns ('a' and 'c') join the rest of the genuines,
+  so we remove (us=a+c) from the unknowns and add them to the genuines (g+us)
+- When the scale tips to one side, we know there's a counterfeit but we don't
+  know if the counterfeit is heavier or lighter, so we move all those unknown
+  on the heavy side to the suspect-heavy bucket ('h') and all those unknown on
+  the light side to the suspect-light bucket ('l'). As per (1) all genuines go back
+  to the genuine pile. When (a,b) < (c,d), we move:
     - 'a' to the light bucket 'l'
     - 'c' to the heavy bucket 'h'
-    - all remaining unknowns (u-us) to the genuine bucket 'g'
-  ending up with `Triple a c (g+u-us)`
+    - all remaining unknowns (u-us) to the genuine bucket 'g' ending up
+      with `Triple a c (g+u-us)`
 
   It is vice versa when (a,b) > (c,d), we get `Triple c a (g+u-us)`
 
@@ -148,14 +155,14 @@ For the Triple-TTrip case, things are a little more complicated:
     - g + (a + d + b + e)
   Note, that c and f are not mentioned because we sort of did
   g - (c + f) + (c + f) = g, when we brought them back.
-- When the left pan is lighter than the right pan (left outcome = (a,b,c) < (d,e,f))
+- When the left pan is lighter than the right pan (left `outcome = (a,b,c) < (d,e,f)`)
     - all suspect-lights from the left pan 'a' go to the light bucket
     - all suspect-heavies from the right pan 'e' go the heavy bucket
     - the rest, and I mean *all the rest* goes to the genuine bucket.
       This means, (l-a) which is all of what remains of the suspect-lights,
       (h-e) which is all of what remains from the suspect-heavies
       end up in the genuines --> g = g + (l - a) + (h - e)
-- When the right pan is heavier than the left pan (right outcomes = (a,b,c) > (d,e,f))
+- When the right pan is heavier than the left pan (right `outcomes = (a,b,c) > (d,e,f)`)
   It is essentially vice versa, but I'll go through it anyway.
       - all suspect-lights from the right pan 'd' go to the light bucket
       - all suspect-heavies from the left pan 'b' go the the heavy bucket
@@ -236,19 +243,21 @@ in the output of `weighings (Pair 4 1)`.
 >     ]
 >   where m = u `div` 2
 
-The Triple case is trickier and requires the subsidiary choices (defined further below).
-We perform the Cartesian product of the set `choices k (l,h,g)` with itself and
-then filter TTrip combinations that do not satisfy the below conditions:
+The Triple case is trickier and requires the subsidiary choices (defined
+further below). We perform the Cartesian product of the set
+`choices k (l,h,g)` with itself and then filter TTrip combinations that
+do not satisfy the below conditions:
 
-- c*f = 0
-- a+b+c == d+e+f
-- b+e <= h
-- c+f <= g
-- a+d <= l
-- and the lexical ordering using (a,b,c) <= show (d,e,f)
+- c * f     = 0
+- a + b + c == d+e+f
+- b + e     <= h
+- c + f     <= g
+- a + d     <= l
+- and the lexical ordering using `show (a,b,c) <= show (d,e,f)`
 
-Note that the set `choices k (l, h, g)` is generated once only and stored in 'ch', avoiding
-repeated computations and saving time. TODO: perhaps mention that this saves xx% time.
+Note that the set `choices k (l, h, g)` is generated once only and stored
+in 'ch', avoiding repeated computations and saving time.
+TODO: perhaps mention that this saves xx% time.
 
 > weighings (Triple l h g) = [
 >     TTrip (a,b,c) (d,e,f)
@@ -286,16 +295,18 @@ Ordering
 >   compare (Pair _ g1)     (Pair _ g2)       = compare g2 g1
 >   compare (Triple _ _ g1) (Triple _ _ g2)   = compare g2 g1
 
-We implement the function compare on our State datatype to allow
+We implement the function compare on our State data type to allow
 the implementation to judge whether certain tests help to progress towards a solution.
 
 - Triple provides more information than Pair thus
   (Triple `compare` Pair = LT and Pair `compare` Triple = GT)
 - Invalid is a terminal state, it provides ample information hence it is
-  always the less than the other operand (Invalid `compare` _ = LT) and (_ `compare` Invalid = GT)
-- When comparing two instances of Pair, the one with more genuine coins provides more information
-  and should be the lesser of the two. The result of comparing 2 Pairs is the opposite of comparing their
-  genuine coins, hence Pair u1 g1 `compare` Pair u2 g2 = g2 `compare` g1
+  always the less than the other operand (Invalid `compare` _ = LT)
+  and (_ `compare` Invalid = GT)
+- When comparing two instances of Pair, the one with more genuine coins provides
+  more information and should be the lesser of the two. The result of comparing
+  2 Pairs is the opposite of comparing their genuine coins,
+  hence Pair u1 g1 `compare` Pair u2 g2 = g2 `compare` g1
 - Same as above but for comparing a pair of Triples. The Triple with most genuines is
   closer to the solution, thus Triple _ _ g1 `compare` Triple _ _ g2 = compare g2 g1
 
@@ -303,17 +314,16 @@ the implementation to judge whether certain tests help to progress towards a sol
 Productive
 ----------
 
-The function productive returns True when all outcomes from a Test on a State move us closer
-to the solution.
+The function productive returns True when all outcomes from a Test on a State
+move us closer to the solution. To implement this, we generate the list of
+outcomes of the State-Test pair and check whether all state outcomes are
+strictly less than the original state.
 
-To implement this, we generate the list of outcomes of the State-Test pair
-and check whether all state outcomes are strictly less than the original state.
-
-We use the higher-order function `all` from Prelude which takes in a function (a->Bool) and a list,
-and applies the function on each element of the list producing a boolean. If all returned booleans are
-true `all` returns True, otherwise it returns False.
-
-The function applied to each outcome is `(<s)` shorthand for `(\x -> x < s)`.
+We use the higher-order function `all` from Prelude which takes in a function
+(a->Bool) and a list, and applies the function on each element of the
+list producing a boolean. If all returned booleans are true `all` returns True,
+otherwise it returns False. The function applied to each outcome is
+`(<s)` shorthand for `(\x -> x < s)`.
 
 > productive :: State -> Test -> Bool
 > productive s t = all (<s) $ outcomes s t
@@ -344,7 +354,9 @@ Was it currying? Check.
 Final
 -----
 
-In this coin problem, we set out to identify the counterfeit coin (if it were present) and determine whether it was lighter or heavier than the remaining genuine coins. Our final states are:
+In this coin problem, we set out to identify the counterfeit coin (if it were present)
+and determine whether it was lighter or heavier than the remaining genuine coins. Our
+final states are:
 
 * (Pair 0 x): no counterfeit coins were found. Zero unknowns and the rest genuines
 * (Triple 1 0 x): we found a single light counterfeit coin
@@ -360,22 +372,25 @@ From the above, we can define the function `final` to return True if we reach a 
 >     foundSingleFake   = (l + h == 1) && (l * h == 0)
 >     allGenuine        = l == 0 && h == 0
 
-As our `final` function ignores the number of genuine coins provided merely checking the unknowns in a Pair state,
-and the lights and heavies in the Triple state, it may return odd results when presented with invalid States, such as
-`(Pair 0 0)` for which it will return `True`, `Triple (1 0 1)` for which it will return `True` and any state with invalid
-number of genuine coins. This is understood and expected.
+As our `final` function ignores the number of genuine coins provided merely
+checking the unknowns in a Pair state, and the lights and heavies in the
+Triple state, it may return odd results when presented with invalid States, such as
+`(Pair 0 0)` for which it will return `True`, `Triple (1 0 1)` for which it
+will return `True` and any state with invalid number of genuine coins.
+This is understood and expected.
 
 Height
 ------
 
-To return the height of the tree, we simply return 1 + the maximum height of each of its child subtrees.
-So we,
+To return the height of the tree, we simply return 1 + the maximum height
+of each of its child subtrees. So we,
 
 1) apply the function height on each of the node's subtrees: map height children
-2) return 1 + the maximum of height returned from the children: 1 + maximum (map height children)
+2) return 1 + the maximum of height returned from the children:
+`1 + maximum (map height children)`.
 
-As with all recursive functions, we need a base case to terminate at, this happens when we reach a Stop node
-whose height is zero.
+As with all recursive functions, we need a base case to terminate at,
+this happens when we reach a Stop node whose height is zero.
 
 > height :: Tree -> Int
 > height (Stop _) = 0
@@ -502,10 +517,11 @@ Again we use pattern matching to detect the node type here.
 
 For a Stop node, we return the equivalent StopH node with the same state.
 
-For a (Node t children), we apply the function `tree2treeH` on all of its children (recursion)
-and the result is a list of TreeHs. At this point we just call our smart-constructor passing
-the test `t` and the list of TreeHs. The smart-constructor takes care of computing the height and
-returning a NodeH. That's the point of 'smart-constructor' it does the dirty-work of this function.
+For a (Node t children), we apply the function `tree2treeH` on all of its children
+(recursion) and the result is a list of TreeHs. At this point we just call our
+smart-constructor passing the test `t` and the list of TreeHs. The smart-constructor
+takes care of computing the height and returning a NodeH.
+That's the point of 'smart-constructor' it does the dirty-work of this function.
 
 TODO: convince yourself that heightH . tree2treeH = height
 
@@ -513,7 +529,7 @@ TODO: convince yourself that heightH . tree2treeH = height
 height (Stop s) = 0
 (heightH . tree2treeH) $ Stop s = heightH (tree2treeH $ Stop s)
                                 = heightH (StopH s)
-                                = 0                             -- matches the pattern in heightH)
+                                = 0         -- matches the pattern in heightH)
 ```
 
 ```
@@ -540,8 +556,8 @@ becomes:
 MkTreeH
 -------
 
-With the function `tree2treeH` we can very simply implement `mktreeH` as the composition of
-`tree2treeH` with `mktree`.
+With the function `tree2treeH` we can very simply implement `mktreeH` as
+the composition of `tree2treeH` with `mktree`.
 
 > mktreeH :: State -> TreeH
 > mktreeH = tree2treeH . mktree
@@ -619,8 +635,8 @@ Evidently, if our earlier functions are wrong then our checks below mean nothing
 
 We would check whether all elements in `bestTests (Pair 8 0)` are actually the roots
 of minimum trees generated by `mktree `or `mktreeH`. The obstacle to this is that
-`mktree` will return one of the minimum height trees (more specifically the first such min tree),
-but we would like the entire list of such trees.
+`mktree` will return one of the minimum height trees (more specifically the
+first such min tree), but we would like the entire list of such trees.
 
 We can create `mktrees`:
 
@@ -652,10 +668,9 @@ map getTest (mktrees s3) == bestTests s3
 
 which returns True.
 
-Of course this does not prove the correctness of anything, but helps increase confidence.
-
-A final note, if mktrees was somehow deemed useful and needed to be kept in the implementation,
-we could reimplement mktree with mktree':
+Of course this does not prove the correctness of anything, but helps increase
+confidence. A final note, if mktrees was somehow deemed useful and needed
+to be kept in the implementation, we could reimplement mktree with mktree':
 
 > mktree' = head . mktrees
 
@@ -674,11 +689,11 @@ MkTreeG
 
 The structure of our function `mktreeG` is not too dissimilar to that of `mktree`.
 
-For a given list of tests, generate the outcomes and create tree nodes from those outcomes.
-
-The difference here is that `bestTest` returns optimal tests (ones that are guaranteed to lead
-to short trees) whereas in `mktree` we had to generate all trees, compute their heights and
-pick the shortest. Since `bestTests` returns a list of optimal tests, we can pick whichever and
+For a given list of tests, generate the outcomes and create tree nodes from
+those outcomes. The difference here is that `bestTest` returns optimal tests
+(ones that are guaranteed to lead to short trees) whereas in `mktree` we had
+to generate all trees, compute their heights and pick the shortest.
+Since `bestTests` returns a list of optimal tests, we can pick whichever and
 create a decision tree from it (we pick the first using `head`).
 
 To quickly go through the function again:
@@ -687,9 +702,10 @@ To quickly go through the function again:
 2) otherwise, create a nodeH using our smart-constructor.
    The smart constructor takes in
    a) a test which is `bestTest`: the first optimal test we find
-   b) a list of child nodes, which are all roots to decision trees representing the outcome states
-      that resulted from `outcomes s bestTest`
-      These child decision trees are created recursively (`mktreeG`) call on each outcome state.
+   b) a list of child nodes, which are all roots to decision trees representing
+      the outcome states that resulted from `outcomes s bestTest`
+      These child decision trees are created recursively (`mktreeG`) call
+      on each outcome state.
 
 MktreesG
 --------
@@ -698,13 +714,14 @@ MktreesG
 > mktreesG s = map test2Tree $ bestTests s
 >   where test2Tree t = nodeH t (map mktreeG $ outcomes s t)
 
-The above `mktreesG`, creates a tree for each optimal test coming out of `bestTests s`: it is clear
-since `mktreesG` merely applies test2Tree to each element in `bestTests s`.
+The above `mktreesG`, creates a tree for each optimal test coming out of
+`bestTests s`: it is clear since `mktreesG` merely applies test2Tree to each
+element in `bestTests s`. The function `test2Tree` creates a node from the
+provided test `t`: to create a tree we pass the test to the smart-constructor
+nodeH, then create a tree from each outcome of that test on the state `s`.
 
-The function `test2Tree` creates a node from the provided test `t`: to create a tree we pass the test
-to the smart-constructor nodeH, then create a tree from each outcome of that test on the state `s`.
-
-(Recall that Data.List.nub removes duplicates from a list. Hence, all those trees have height 3.) How many minimum-height decision trees are there for n = 12?
+(Recall that Data.List.nub removes duplicates from a list. Hence, all those
+trees have height 3.) How many minimum-height decision trees are there for n = 12?
 
 One only:
 CoinProblem> length $ mktreesG (Pair 12 0)
@@ -744,6 +761,5 @@ CoinProblem> (map getTest $ mktrees (Pair 8 0 )) == (map getTestH $ mktreesG (Pa
 True
 
 
-* TODO: the lines cut in the pdf output - need to prevent that.
 * TODO: consistent plus/minuses in the writeup
 * TODO: be consistent with usage of pan and bucket
