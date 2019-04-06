@@ -376,6 +376,16 @@ $endif$
   \end{center}
 \end{titlepage}
 
+% ==============================================================================
+% TABLE OF CONTENTS
+% ==============================================================================
+
+\clearpage
+\tableofcontents
+\thispagestyle{empty} % remove page number
+\pagebreak
+\pagenumbering{arabic} % start numbering
+
 $if(title)$
 $if(beamer)$
 \frame{\titlepage}

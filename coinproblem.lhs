@@ -461,7 +461,7 @@ Finally we glue the different components together@
   - return the tree with the shortest height from the above list
 
 
-5 Caching heights
+5. Caching heights
 ==================
 
 > data TreeH = StopH State | NodeH Int Test [TreeH]
