@@ -1,15 +1,3 @@
-% Functional Programming Assignment (FPR)
-% Sami Farhat
-% 16th April 2019
-
-* TODO: the lines cut in the pdf output - need to prevent that.
-* TODO: be consistent as to whether there are spaces betwen the pluses
-* TODO: be consistent with usage of pan and bucket
-* TODO: we have lots of treeCmp, maybe we want to create a separate
-function for that
-* TODO: refactor to have on efunction for the maktee for
-all 3 of them (a parametrized one)
-
 > module CoinProblem where
 > import Data.List (minimumBy, elemIndex)
 
@@ -19,8 +7,12 @@ all 3 of them (a parametrized one)
 > data State = Pair Int Int | Triple Int Int Int | Invalid
 >   deriving (Eq, Show)
 
-> data Test = TPair (Int, Int) (Int, Int) | TTrip (Int, Int, Int) (Int, Int, Int)
+> data Test = TPair (Int, Int) (Int, Int)
+>           | TTrip (Int, Int, Int) (Int, Int, Int)
 >   deriving (Eq, Show)
+
+Valid
+-----
 
 The 'valid' function below returns True only when its arguments are of types
 - Pair and TPair
@@ -38,19 +30,21 @@ and when all below booleans are true:
             because we have equalPans that enforces the latter (same for Triple case).
 
 > valid :: State -> Test -> Bool
-> valid (Pair u g) (TPair (a,b) (c,d)) = allPositive && equalPans && sufficientCoins && nonZero
+> valid (Pair u g) (TPair (a,b) (c,d))
+>     = allPositive && equalPans && sufficientCoins && nonZero
 >   where
->     allPositive = all (>=0) [u,g,a,b,c,d]
->     equalPans = sum[a,b] == sum[c,d]
+>     allPositive     = all (>=0) [u,g,a,b,c,d]
+>     equalPans       = sum[a,b] == sum[c,d]
 >     sufficientCoins = sum[a,c] <= u && sum[b,d] <= g
->     nonZero = sum[a,b] /= 0
+>     nonZero         = sum[a,b] /= 0
 >
-> valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = allPositive && equalPans && sufficientCoins && nonZero
+> valid (Triple l h g) (TTrip (a,b,c) (d,e,f))
+>     = allPositive && equalPans && sufficientCoins && nonZero
 >   where
->     allPositive = all (>=0) [l,h,g,a,b,c,d,e,f]
->     equalPans = sum[a,b,c] == sum[d,e,f]
+>     allPositive     = all (>=0) [l,h,g,a,b,c,d,e,f]
+>     equalPans       = sum[a,b,c] == sum[d,e,f]
 >     sufficientCoins = sum[a,d] <= l && sum[b,e] <= h && sum[c,f] <= g
->     nonZero = sum[a,b,c] /= 0
+>     nonZero         = sum[a,b,c] /= 0
 >
 > valid _ _ = False
 
@@ -128,9 +122,9 @@ For the Pair-TPair case:
     - 'a' to the light bucket 'l'
     - 'c' to the heavy bucket 'h'
     - all remaining unknowns (u-us) to the genuine bucket 'g'
-  ending up with Triple a c (g+u-us)
+  ending up with `Triple a c (g+u-us)`
 
-  It is vice versa when (a,b) > (c,d), we get Triple c a (g+u-us)
+  It is vice versa when (a,b) > (c,d), we get `Triple c a (g+u-us)`
 
   I'm sure we all get it. Super.
 
@@ -585,8 +579,6 @@ not an evaluation criteria.
 6. A greedy solution
 ====================
 
-NOTE: why is it ab?
-
 Optimal copied from the coversheet.
 
 > optimal :: State -> Test -> Bool
@@ -706,8 +698,8 @@ MktreesG
 > mktreesG s = map test2Tree $ bestTests s
 >   where test2Tree t = nodeH t (map mktreeG $ outcomes s t)
 
-The above mktreesG, creates a tree for each optimal test coming out of `bestTests s`: it is clear
-since mktreesG merely applies test2Tree to each element in `bestTests s`.
+The above `mktreesG`, creates a tree for each optimal test coming out of `bestTests s`: it is clear
+since `mktreesG` merely applies test2Tree to each element in `bestTests s`.
 
 The function `test2Tree` creates a node from the provided test `t`: to create a tree we pass the test
 to the smart-constructor nodeH, then create a tree from each outcome of that test on the state `s`.
@@ -750,3 +742,8 @@ CoinProblem> map getTestH $ mktreesG (Pair 12 0)
 
 CoinProblem> (map getTest $ mktrees (Pair 8 0 )) == (map getTestH $ mktreesG (Pair 8 0))
 True
+
+
+* TODO: the lines cut in the pdf output - need to prevent that.
+* TODO: consistent plus/minuses in the writeup
+* TODO: be consistent with usage of pan and bucket

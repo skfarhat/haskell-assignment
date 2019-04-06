@@ -12,6 +12,7 @@ $if(background-image)$
 \includegraphics[width=\paperwidth]{$background-image$}%
 }
 $endif$
+\usepackage{fancyhdr}
 \usepackage{pgfpages}
 \setbeamertemplate{caption}[numbered]
 \setbeamertemplate{caption label separator}{: }
@@ -68,6 +69,7 @@ $if(linestretch)$
 \usepackage{setspace}
 \setstretch{$linestretch$}
 $endif$
+\usepackage{graphicx}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
@@ -345,6 +347,35 @@ $endif$
 $endif$
 
 \begin{document}
+
+\clearpage
+
+\thispagestyle{empty} % remove page number
+\pagebreak
+\begin{titlepage}
+  \begin{center}
+    \vspace*{1cm}
+    {\Huge Functional Programming} \\
+    \vspace{0.5cm}
+    {\LARGE FPR\\}
+    \vspace{0.5cm}
+    \vspace{3.5cm}
+    {\LARGE Sami Farhat\\}
+    \vspace{0.1cm}
+    {\Large \# 1065452\\}
+    \vspace{0.3cm}
+    \vfill
+    \vspace{0.8cm}
+    Software Engineering Programme\\
+    Computer Science\\
+    \vspace{0.5cm}
+    University of Oxford\\
+    United Kingdom\\
+    \vspace{1.0cm}
+    \includegraphics[width=0.15\textwidth]{res/oxford-logo.png}
+  \end{center}
+\end{titlepage}
+
 $if(title)$
 $if(beamer)$
 \frame{\titlepage}
