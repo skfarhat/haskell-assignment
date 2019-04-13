@@ -410,7 +410,7 @@ Our where function defines the comparator `treeCmp` which given two tree instanc
 returns LT, EQ, or GT based on which has the shorter/longer height.
 
 > minHeight :: [Tree] -> Tree
-> minHeight trees = minimumBy treeCmp trees
+> minHeight = minimumBy treeCmp
 > 		where treeCmp t1 t2 = height t1 `compare` height t2
 
 We could have defined minimumBy ourselves:
@@ -496,7 +496,7 @@ NodeH
 
 > nodeH :: Test -> [TreeH] -> TreeH
 > nodeH t children = NodeH h t children
->   where h = 1 + (maximum $ map heightH children)
+>   where h = 1 + maximum $ map heightH children
 
 This is the crucial differentiator between Tree and TreeH.
 When creating a NodeH, we label it with its height to avoid
@@ -645,7 +645,7 @@ We can create `mktrees`:
 > mktrees :: State -> [Tree]
 > mktrees s
 >   | final s = [Stop s]
->   | otherwise = filter (\t -> h == (height t)) allTrees
+>   | otherwise = filter (\t -> h == height t) allTrees
 >     where
 >       h = height $ minHeight allTrees
 >       allTrees = map test2Tree (tests s)
