@@ -367,16 +367,6 @@ to the above.
 Final
 -----
 
-In this coin problem, we set out to identify the counterfeit coin (if it were present)
-and determine whether it was lighter or heavier than the remaining genuine coins. Our
-final states are:
-
-* (Pair 0 x): no counterfeit coins were found. Zero unknowns and the rest genuines
-* (Triple 1 0 x): we found a single light counterfeit coin
-* (Triple 0 1 x): we found a single heavy counterfeit coin
-
-From the above, we can define the function `final` to return True if we reach a final state.
-
 > final :: State -> Bool
 > final Invalid         = True
 > final (Pair u _)      = u == 0
@@ -385,12 +375,15 @@ From the above, we can define the function `final` to return True if we reach a 
 >     foundSingleFake   = (l + h == 1) && (l * h == 0)
 >     allGenuine        = l == 0 && h == 0
 
-As our `final` function ignores the number of genuine coins provided merely
-checking the unknowns in a Pair state, and the lights and heavies in the
-Triple state, it may return odd results when presented with invalid States, such as
-`(Pair 0 0)` for which it will return `True`, `Triple (1 0 1)` for which it
-will return `True` and any state with invalid number of genuine coins.
-This is understood and expected.
+Final states are ones where no more progress can be done. They are:
+
+* `Pair 0 x`: no counterfeit was found, u=0
+* `Triple 1 0 x`: we found a single light counterfeit coin `l=1,h=0`
+* `Triple 0 1 x`: we found a single heavy counterfeit coin `l=0,h=1`
+* Invalid: invalid state, no where to go from here
+
+_Note on behaviour:_ our `final` function ignores the number of genuine coins `g` and only checks lights, heavies and unknowns. It is therefore expected that
+outright wrong states such as `(Pair 0 0)` and `Triple (1 0 1)` return true even when they are wrong.
 
 Height
 ------
