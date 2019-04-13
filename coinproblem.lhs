@@ -54,19 +54,19 @@ The `valid _ _ = False` at the bottom of the function matches any patterns that 
 Working through the coin problem, it is evident that some states are impossible to
 reach and confirmation of this can be found in the coversheet section discussing the
 outcomes of state `Triple 3 0 6` with test `TTrip (0, 0, 3) (3, 0, 0)`
-which are [Triple 0 0 9,Triple 0 0 9,Triple 3 0 6].
+which are `[Triple 0 0 9,Triple 0 0 9,Triple 3 0 6]`.
 
 First, let us discuss the intuition behind why two of those outcomes are invalid.
 
 - The left outcome would be the result of the 3 genuine coins on the left weighing less
-  than the 3 suspect-light coins on the right (0,0,3) < (3,0,0).
+  than the 3 suspect-light coins on the right `(0,0,3) < (3,0,0)`.
   This outcome is impossible because in a TTrip test, an all genuine pan cannot weigh
   less than one with no suspect-heavy coins. An all genuine can only be on the lighter
   side of the scale when weighed against:
     (a) Unknown coins in a TPair test
     (b) Suspect-heavy coins in a TTrip test
 - The middle outcome would be the result of the 3 genuine coins balancing with
-  the 3 suspect-lights: (0,0,3) == (3,0,0). It is not invalid for genuines to balance with
+  the 3 suspect-lights: `(0,0,3) == (3,0,0)`. It is not invalid for genuines to balance with
   suspect-lights (or heavies) but their balancing here implies all suspect-lights are
   genuine, which in turn implies all coins are genuine. This is impossible because
   we are in a Triple state and we know that the scale tipped to one side on one of our earlier
@@ -115,28 +115,6 @@ The signature of outcomes is:
 
 For the Pair-TPair case:
 
-- When the pans balance (middle outcome), we know that all coins currently on
-  the scale are genuine. The previously unknown `a` and `c` are now genuine.
-  Hence the remaining number of unknown coins is the original `u` minus `us=(a+c)`,
-  and the total number of genuine coins increases by us `g+us`.
-- When the scale tips to one side (left and right outcomes), the next state is
-  a Triple, hence the use of `mkTriple`. We know there's a counterfeit coin but
-  whether heavy or light is yet to be determined. We move all previously unknown
-  coins on the heavy side of the scale to the suspect-heavy pile ('h') and
-  all previously unknown coins on the light side of the scale to the suspect-light
-  pile ('l'). As per (2) all genuine coins return to the genuine pile.
-  Concretely, in the left outcome (a,b) < (c,d), we move:
-    - `a` to the light pile `l`
-    - `c` to the heavy pile `h`
-    - all remaining unknown coins that did not take part in the test to the genuine
-      pile leaving us with `Triple a c (g+u-us)`
-  The right outcome (a,b) > (c,d) is symmetric to the left one with `a` and `c`
-  swapping places: `Triple c a (g+u-us)`
-
-**Sanity check**: the total number of coins in the left and right outcomes is:
-`a + c + g + u - (a + c) = g + u` which matches the number in the original state.
-Same for the middle outcome: `u - (a + c) + (g + (a + c)) = g + u`
-
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >   | valid (Pair u g) (TPair (a,b) (c,d)) = [
 >       mkTriple  a       c   (g + u - us),
@@ -146,31 +124,33 @@ Same for the middle outcome: `u - (a + c) + (g + (a + c)) = g + u`
 >   | otherwise = []
 >   where us = a + c
 
-For the Triple-TTrip case, things are a little more complicated:
+When the pans balance (middle outcome), we know that all coins currently on
+the scale are genuine. The previously unknown `a` and `c` are now genuine.
+Hence the remaining number of unknown coins is the original `u` minus `us=(a+c)`,
+and the total number of genuine coins increases by us `g+us`.
 
-- When the pans balance (middle outcome = (a,b,c) = (d,e,f))
-  we know that all coins on both sides of the scale are genuine,
-  so we move all suspect-lights ('a' and 'd') and all suspect-heavies
-  ('b' and 'e') to the genuine pile, ending up with
-    - l - (a + d) in the light bucket
-    - h - (b + e) in the heavy bucket
-    - g + (a + d + b + e)
-  Note, that c and f are not mentioned because we sort of did
-  g - (c + f) + (c + f) = g, when we brought them back.
-- When the left pan is lighter than the right pan (left `outcome = (a,b,c) < (d,e,f)`)
-    - all suspect-lights from the left pan 'a' go to the light bucket
-    - all suspect-heavies from the right pan 'e' go the heavy bucket
-    - the rest, and I mean *all the rest* goes to the genuine bucket.
-      This means, (l-a) which is all of what remains of the suspect-lights,
-      (h-e) which is all of what remains from the suspect-heavies
-      end up in the genuines --> g = g + (l - a) + (h - e)
-- When the right pan is heavier than the left pan (right `outcomes = (a,b,c) > (d,e,f)`)
-  It is essentially vice versa, but I'll go through it anyway.
-      - all suspect-lights from the right pan 'd' go to the light bucket
-      - all suspect-heavies from the left pan 'b' go the the heavy bucket
-      - the rest goes to the genuine bucket. That is, g = g + (l - d) + (h - b)
+When the scale tips to one side (left and right outcomes), the next state is
+a Triple, hence the use of `mkTriple`. We know there's a counterfeit coin but
+whether heavy or light is yet to be determined. We move all previously unknown
+coins on the heavy side of the scale to the suspect-heavy pile `h` and
+all previously unknown coins on the light side of the scale to the suspect-light
+pile `l`. As per (2) all genuine coins return to the genuine pile.
+Concretely, in the left outcome `(a,b) < (c,d)`, we move:
 
-TODO: figure out how best to neaten this up
+  - `a` to the light pile `l`
+  - `c` to the heavy pile `h`
+  - all unknown coins that did not take part in the test to the genuine
+    pile leaving us with `Triple a c (g+u-us)`
+
+The right outcome `(a,b) > (c,d)` is symmetric to the left one with `a` and `c`
+swapping places: `Triple c a (g+u-us)`
+
+**Sanity check**
+The total number of coins in the left and right outcomes is:
+`a + c + g + u - (a + c) = g + u` which matches the number in the original state.
+Same for the middle outcome: `u - (a + c) + (g + (a + c)) = g + u`
+
+The Triple-TTrip case is slightly trickier:
 
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
@@ -182,6 +162,35 @@ TODO: figure out how best to neaten this up
 >   where
 >     l' = a + d
 >     h' = b + e
+
+TODO: figure out how best to neaten this up
+
+When the pans balance, all coins in the test go to the genuine pile. The `l` and
+`h` piles shrink by `l' = a + d` and `h' = b + e` respectively, and the genuine
+pile grows by the same amount. The known genuine coins `c` and `f` are not present in
+this equation because following from (2) above they return to the genuine pile.
+In summary:
+
+  - Light pile: `l - (a + d)`
+  - Heavy pile: `h - (b + e)`
+  - Genuine pile: `g + (a + d + b + e)`
+
+When the left pan is lighter than the right pan `(a,b,c) < (d,e,f)`
+
+  - All suspect-lights in the left pan `a` end up in the light pile
+  - All suspect-heavies in the right pan `e` end up in the heavy pile
+  - All other coins end up in the genuine pile including all suspect-lights
+    that did not take part in the test or that were on the heavy side of the scale
+    `(l-a)`, and all suspect-heavies that were not in the test or that were
+    on the light side of the scale `(h-e)`. The genuine pile becomes:
+    `g = g + (l - a) + (h - e)`
+
+The case where the left pan is heavier than the right one `(a,b,c) > (d,e,f)`
+is vice versa of the above. In summary:
+
+  - All suspect-lights in the right pan `d` end up in the light pile
+  - All suspect-heavies in the left pan `b` end up in the heavy pile.
+  - All other coins end up in the genuine pile: `g = g + (l - d) + (h - b)`
 
 
 Weighings
