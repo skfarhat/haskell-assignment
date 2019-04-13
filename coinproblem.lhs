@@ -154,16 +154,14 @@ The Triple-TTrip case is slightly trickier:
 
 > outcomes (Triple l h g) (TTrip (a,b,c) (d,e,f))
 >   | valid (Triple l h g) (TTrip (a,b,c) (d,e,f)) = [
->       mkTriple a        e         $ g + (l - a) + (h - e),
->       mkTriple (l - l') (h - h')  $ g + l' + h',
->       mkTriple d        b         $ g + (l - d) + (h - b)
+>       mkTriple   (a)      (e)     $ g + (l - a) + (h - e),
+>       mkTriple (l - l') (h - h')  $ g + l' + h'          ,
+>       mkTriple   (d)      (b)     $ g + (l - d) + (h - b)
 >     ]
 >   | otherwise = []
 >   where
 >     l' = a + d
 >     h' = b + e
-
-TODO: figure out how best to neaten this up
 
 When the pans balance, all coins in the test go to the genuine pile. The `l` and
 `h` piles shrink by `l' = a + d` and `h' = b + e` respectively, and the genuine
@@ -196,55 +194,55 @@ is vice versa of the above. In summary:
 Weighings
 ---------
 
-Next, we define the function weighings returning all sensible weighing
-possibilities given a number of coins.
-
-For a Pair-TPair test, we have the following constraints:
-
-1. Both pans must have the same number of coins: a + b = c + d
-2. One of the pans must not have genuine coins: b * d = 0
-3. Only the lexically smaller of symmetrical weighings is returned
-   e.g. return the former from TPair (0,1) (1,0) and TPair (1,0) (0,1)
-
-The above can only be satisfied if d = 0, why?
-Proof by contradiction, assume d /= 0.
-From (2), we have b = 0 and (1) becomes a = c + d which means a > c
-because d > 0 (remember d cannot be negative), but this contradicts (3).
-So d cannot be non-zero, hence d is zero.
-
-From the above, we have a + b = c and TPair (a,b) (c,d) becomes TPair (a,b) (a+b,0)
-
-We can generate all combinations using list comprehension while ensuring the
-below conditions remain satisfied:
-
-- a + b /= 0
-- 2a + b <= u
-- b <= g
-
-The highest possible value possible for 'a' is m = u `div` 2.
-We can prove this by contradiction, assume a = m + 1
-Then when u is even
-```
-  a = m + 1
-  a = u/2 + 1
-  2a = u + 2
-  2a > u        (contradiction)
-```
-when u is odd,
-```
-  m = (u-1)/2
-  m+1 = (u-1)/2 + 1
-  a = (u+1)/2
-  2a = u+1
-  2a > u        (contradiction)
-```
-To be clear, not all combinations of a <- [0..m] and b <- [0..g] are valid,
-we still need to filter out weighings where 2a + b > u or a + b = 0
-
-As an example, we don't want `TPair (0,0) (0,0) or TPair (2,1) (3,0)`
-in the output of `weighings (Pair 4 1)`.
-
 > weighings :: State -> [Test]
+
+__Pair Case__
+
+We have the following constraints:
+
+1. Both pans must have the same number of coins: `a + b = c + d`
+2. One of the pans must not have genuine coins: `b * d = 0`
+3. Only the lexically smaller of symmetrical weighings is returned
+   e.g. return the former of `TPair (0,1) (1,0)` and `TPair (1,0) (0,1)`
+
+__The conditions are only satisfied if `d == 0`. Why?__
+
+It can be proven through contradiction, let us assume `d /= 0`.
+From (2), we have `b = 0` and (1) becomes `a = c + d` implying `a > c`
+because `d > 0` (remember d cannot be negative), but this contradicts (3)
+therefore d is not non-zero, `d` is zero.
+Consequently, `a + b = c` and `TPair (a,b) (c,d)` simplifies to `TPair (a,b) (a+b,0)`.
+The implementation boils down to a list comprehension that filters out candidates
+violating any of the below conditions:
+
+- `a + b /= 0`
+- `2a + b <= u`
+- `b <= g`
+
+For the range of `a`, we can show that it its upper bound is `m= u div 2` by contradiction.
+Assume `a = m + 1`.
+
+When u is even, `u div 2 = u / 2`:
+```
+  a  = m + 1
+  a  = u/2 + 1
+  2a = u + 2
+  2a > u        (impossible)
+```
+
+When u is odd, `u div 2 = (u-1)/2`:
+```
+  m     = (u-1)/2
+  m + 1 = (u-1)/2 + 1
+  a     = (u+1)/2
+  2a    = u+1
+  2a    > u        (impossible)
+```
+
+TODO: consider beautifying the equations here (latex manner).
+
+The TPair case is:
+
 > weighings (Pair u g) = [
 >     TPair (a, b) (a + b, 0)
 >       | a <- [0..m],
@@ -254,21 +252,22 @@ in the output of `weighings (Pair 4 1)`.
 >     ]
 >   where m = u `div` 2
 
-The Triple case is trickier and requires the subsidiary choices (defined
-further below). We perform the Cartesian product of the set
-`choices k (l,h,g)` with itself and then filter TTrip combinations that
-do not satisfy the below conditions:
+__Triple Case__
 
-- c * f     = 0
-- a + b + c == d+e+f
-- b + e     <= h
-- c + f     <= g
-- a + d     <= l
-- and the lexical ordering using `show (a,b,c) <= show (d,e,f)`
+This case is trickier and requires the subsidiary `choices` defined further below.
+(ghci does not allow us to intersperse weighings and choices definitions). We perform
+the Cartesian product of the set `choices k (l,h,g)` with itself filtering out
+TTrip combinations that do not satisfy the below conditions:
+
+- `c * f        = 0`
+- `a + b + c    == d+e+f`
+- `b + e        <= h`
+- `c + f        <= g`
+- `a + d        <= l`
+- `show (a,b,c) <= show (d,e,f)`
 
 Note that the set `choices k (l, h, g)` is generated once only and stored
-in 'ch', avoiding repeated computations and saving time.
-TODO: perhaps mention that this saves xx% time.
+in 'ch' to avoid redundant calls.
 
 > weighings (Triple l h g) = [
 >     TTrip (a,b,c) (d,e,f)
@@ -284,6 +283,9 @@ TODO: perhaps mention that this saves xx% time.
 >         show (a,b,c)  <= show (d,e,f)
 >     ]
 >     where kr = (l + h + g) `div` 2
+
+The `choices` function returns all possible combinations of `l, h, g` given a number
+of coins `k`.
 
 > choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
 > choices k (l, h, g) = [
@@ -774,3 +776,4 @@ True
 
 * TODO: consistent plus/minuses in the writeup
 * TODO: be consistent with usage of pan and bucket
+* TODO: consider being harsher on the 80 chars rule (maybe there's an online tool?)
