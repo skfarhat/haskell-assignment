@@ -14,20 +14,19 @@
 Valid
 -----
 
-The 'valid' function below returns True only when its arguments are of types
-- `Pair` and `TPair`
-- `Triple` and `TTrip`
+The function returns true only when its arguments match the pattern (Pair-TPair)
+or (Triple-TTrip), and when all conditions below are true:
 
-and when all below booleans are true:
+- `allPositive`     : all integers in Pair, Triple, TPair, TTrip are positive.
+- `equalPans`       : same number of coins on the left and right pans of the scale.
+- `sufficientCoins` : there must be a sufficient number of coins for each pile in the test as
+                      there are in the state.
+- `nonZero`         : we're not weighing zero with zero, since we learn nothing from that
+                      Note that it is sufficient to check sum[a,b] == 0 without sum[c,d] == 0
+                      because we have equalPans that enforces the latter (same for Triple case).
 
-- `allPositive`: all integers in Pair, Triple, TPair, TTrip instances are positive.
-- `sufficientCoins`: for both State-Test combinations, there must be at least as many
-                   coins of each type in the State than there are in the Test.
-- `equalPans`: the provided test must have an equal number of coins on both sides of the scale
-- `nonZero`: the number of coins in each pan of the test is non-zero, since you also
-            "learn nothing from weighing zero with zero".
-            Note that it is sufficient to check sum[a,b] == 0 without sum[c,d] == 0
-            because we have equalPans that enforces the latter (same for Triple case).
+The `valid _ _ = False` at the bottom of the function matches any patterns that were not
+(Pair-TPair) or (Triple-TTrip) and returns false for them.
 
 > valid :: State -> Test -> Bool
 > valid (Pair u g) (TPair (a,b) (c,d))
@@ -54,34 +53,35 @@ and when all below booleans are true:
 
 Working through the coin problem, it is evident that some states are impossible to
 reach and confirmation of this can be found in the coversheet section discussing the
-outcomes of State=(Triple 3 0 6) with Test=(TTrip (0, 0, 3) (3, 0, 0))
+outcomes of state `Triple 3 0 6` with test `TTrip (0, 0, 3) (3, 0, 0)`
 which are [Triple 0 0 9,Triple 0 0 9,Triple 3 0 6].
 
-First, let us discuss why the first two outcomes are invalid:
+First, let us discuss the intuition behind why two of those outcomes are invalid.
 
-- The leftmost outcome occurs when the 3 genuine coins weighed less than the 3 coins
-  that were once in a light pan (0,0,3) < (3,0,0). This outcome is impossible because
-  in a TTrip test, a pan containing all genuine coins cannot weigh less than a pan
-  with no suspect-heavy coins. Genuine coins are on the lighter side of the scale
-  when weighed against:
-    (a) unknown coins in a TPair test
-    (b) suspect-heavy coins in a TTrip test
-- The middle outcome occurs if the pan with 3 genuines balances with the pan with
-  3 suspect-lights (0,0,3) == (3,0,0). Normally, it is possible for genuines to
-  balance with suspects but in this case a balance implies all coins are genuine,
-  which is impossible in a Triple state. We have already seen the scales tip to
-  one end in our of the earlier tests, so how are you telling me that all are genuine?
+- The left outcome would be the result of the 3 genuine coins on the left weighing less
+  than the 3 suspect-light coins on the right (0,0,3) < (3,0,0).
+  This outcome is impossible because in a TTrip test, an all genuine pan cannot weigh
+  less than one with no suspect-heavy coins. An all genuine can only be on the lighter
+  side of the scale when weighed against:
+    (a) Unknown coins in a TPair test
+    (b) Suspect-heavy coins in a TTrip test
+- The middle outcome would be the result of the 3 genuine coins balancing with
+  the 3 suspect-lights: (0,0,3) == (3,0,0). It is not invalid for genuines to balance with
+  suspect-lights (or heavies) but their balancing here implies all suspect-lights are
+  genuine, which in turn implies all coins are genuine. This is impossible because
+  we are in a Triple state and we know that the scale tipped to one side on one of our earlier
+  tests so there is a counterfeit coin.
 
+Any state `Triple 0 0 x` is an invalid state because it implies the absence of counterfeit
+coins which violates the Triple state's existence. We create a smart-constructor for our
+Triple states below.
 
 MkTriple
 --------
 
-Following on from the above, it is impossible to have a state (Triple 0 0 x)
-because that would imply all are genuine.
-
-We create a function mkTriple to wrap around the Triple constructor.
-The function checks the 'l' and 'h' parameters; if both are zero it returns
-an Invalid state instead of an invalid Triple state.
+The function wraps around the Triple constructor checking the 'l' and 'h' parameters:
+  - if both are zero it returns an Invalid value (see data declaration of State)
+  - otherwise return a Triple state.
 Hence, mkTriple (0 0 9) = Invalid.
 
 Going forward, there should be no bare Triple constructors, instead
@@ -496,7 +496,7 @@ NodeH
 
 > nodeH :: Test -> [TreeH] -> TreeH
 > nodeH t children = NodeH h t children
->   where h = 1 + maximum $ map heightH children
+>   where h = 1 + maximum (map heightH children)
 
 This is the crucial differentiator between Tree and TreeH.
 When creating a NodeH, we label it with its height to avoid
