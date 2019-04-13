@@ -96,21 +96,18 @@ mkTriple is employed.
 Outcomes
 --------
 
-Outcome is the critical function to get right in this problem.
+This function is arguably the most critical. First, we outline some rules/conditions
+that must be maintained in both (Pair-TPair) and (Triple-TTrip) combinations.
 
-We will first outline the unbreakable ground-rules before proceeding to other details.
-
-For both state-test combinations (Pair-TPair and Triple-TTrip):
-
-(1) An empty list is returned if the state-test combination is invalid according to
-    our definition of 'valid'
-(2) The genuine coins used in both pans of the test end up in the genuine bucket of
-    he outcomes. For instance, in a TPair (a,b) (c,d) both b and d will end up in
-    the genuine bucket of all outcome states, and for TTrip (a,b,c) (d,e,f),
-    both c and f end up in the genuine bucket of all outcome states.
-(3) Each of the outcomes must have the same number of coins in total as the starting
-    state (of course!). We will compute this sum in our explanation to showcase that
-    this invariant is held - but also for sanity checking our implementation.
+(1) The outcome of an invalid state-test combination (according to our definition
+    of valid above) is an empty list.
+(2) Genuine coins used in a test always go back to the genuine pile in the outcome
+    state. Hence, in a `TPair (a,b) (c,d)` both `b` and `d` return to the
+    genuine pile of all outcome states, and the same for `c` and `f` in
+    the TTrip (a,b,c) (d,e,f) test.
+    Perhaps the above is evident but it helps to clearly outline it.
+(3) The total number of coins is unchanged between a state and its outcomes.
+    Again, obvious, but this will in sanity checking our implementation.
 
 The signature of outcomes is:
 
@@ -118,22 +115,27 @@ The signature of outcomes is:
 
 For the Pair-TPair case:
 
-- If the pans balance (middle outcome), then we know that all coins on the scale
-  are genuines. The unknowns ('a' and 'c') join the rest of the genuines,
-  so we remove (us=a+c) from the unknowns and add them to the genuines (g+us)
-- When the scale tips to one side, we know there's a counterfeit but we don't
-  know if the counterfeit is heavier or lighter, so we move all those unknown
-  on the heavy side to the suspect-heavy bucket ('h') and all those unknown on
-  the light side to the suspect-light bucket ('l'). As per (1) all genuines go back
-  to the genuine pile. When (a,b) < (c,d), we move:
-    - 'a' to the light bucket 'l'
-    - 'c' to the heavy bucket 'h'
-    - all remaining unknowns (u-us) to the genuine bucket 'g' ending up
-      with `Triple a c (g+u-us)`
+- When the pans balance (middle outcome), we know that all coins currently on
+  the scale are genuine. The previously unknown `a` and `c` are now genuine.
+  Hence the remaining number of unknown coins is the original `u` minus `us=(a+c)`,
+  and the total number of genuine coins increases by us `g+us`.
+- When the scale tips to one side (left and right outcomes), the next state is
+  a Triple, hence the use of `mkTriple`. We know there's a counterfeit coin but
+  whether heavy or light is yet to be determined. We move all previously unknown
+  coins on the heavy side of the scale to the suspect-heavy pile ('h') and
+  all previously unknown coins on the light side of the scale to the suspect-light
+  pile ('l'). As per (2) all genuine coins return to the genuine pile.
+  Concretely, in the left outcome (a,b) < (c,d), we move:
+    - `a` to the light pile `l`
+    - `c` to the heavy pile `h`
+    - all remaining unknown coins that did not take part in the test to the genuine
+      pile leaving us with `Triple a c (g+u-us)`
+  The right outcome (a,b) > (c,d) is symmetric to the left one with `a` and `c`
+  swapping places: `Triple c a (g+u-us)`
 
-  It is vice versa when (a,b) > (c,d), we get `Triple c a (g+u-us)`
-
-  I'm sure we all get it. Super.
+**Sanity check**: the total number of coins in the left and right outcomes is:
+`a + c + g + u - (a + c) = g + u` which matches the number in the original state.
+Same for the middle outcome: `u - (a + c) + (g + (a + c)) = g + u`
 
 > outcomes (Pair u g) (TPair (a,b) (c,d))
 >   | valid (Pair u g) (TPair (a,b) (c,d)) = [
