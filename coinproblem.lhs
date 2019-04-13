@@ -303,58 +303,58 @@ Ordering
 > instance Ord State where
 >   compare Invalid         _                 = LT
 >   compare _               Invalid           = GT
->   compare (Triple _ _ _)  (Pair _ _)        = LT
->   compare (Pair _ _) (    Triple _ _ _)     = GT
->   compare (Pair _ g1)     (Pair _ g2)       = compare g2 g1
+>   compare (Triple _ _ _ ) (Pair _ _)        = LT
+>   compare (Pair _ _     ) (Triple _ _ _)    = GT
+>   compare (Pair _ g1    ) (Pair _ g2)       = compare g2 g1
 >   compare (Triple _ _ g1) (Triple _ _ g2)   = compare g2 g1
 
-We implement the function compare on our State data type to allow
-the implementation to judge whether certain tests help to progress towards a solution.
+The `compare` function is overridden for our State datatype to allow for judging the
+proximity of a state to the final solution.
 
-- Triple provides more information than Pair thus
-  (Triple `compare` Pair = LT and Pair `compare` Triple = GT)
-- Invalid is a terminal state, it provides ample information hence it is
-  always the less than the other operand (Invalid `compare` _ = LT)
-  and (_ `compare` Invalid = GT)
-- When comparing two instances of Pair, the one with more genuine coins provides
-  more information and should be the lesser of the two. The result of comparing
-  2 Pairs is the opposite of comparing their genuine coins,
-  hence Pair u1 g1 `compare` Pair u2 g2 = g2 `compare` g1
-- Same as above but for comparing a pair of Triples. The Triple with most genuines is
-  closer to the solution, thus Triple _ _ g1 `compare` Triple _ _ g2 = compare g2 g1
+- `Triple` provides more information than `Pair` hence
+  `Triple compare Pair = LT` and `Pair compare Triple = GT`
+- `Invalid` is a terminal state hence it is considered less than all other states
+  `Invalid compare _ = LT` and `_ compare Invalid = GT`.
+- The result of comparing 2 instances of `Pair` is equal to the opposite of comparing
+  their genuine coins: the instances with **more** genuine coins is considered **less**
+  than the other: `(Pair u1 g1) compare (Pair u2 g2) = g2 compare g1`.
+- The Triple case is similar to the Pair case in this regard, the `Triple` with more
+  genuine coins is the lesser of the two instances:
+  `Triple _ _ g1 compare Triple _ _ g2 = compare g2 g1`
 
 
 Productive
 ----------
 
-The function productive returns True when all outcomes from a Test on a State
-move us closer to the solution. To implement this, we generate the list of
-outcomes of the State-Test pair and check whether all state outcomes are
-strictly less than the original state.
-
-We use the higher-order function `all` from Prelude which takes in a function
-(a->Bool) and a list, and applies the function on each element of the
-list producing a boolean. If all returned booleans are true `all` returns True,
-otherwise it returns False. The function applied to each outcome is
-`(<s)` shorthand for `(\x -> x < s)`.
-
 > productive :: State -> Test -> Bool
 > productive s t = all (<s) $ outcomes s t
+
+The function returns true when all outcomes of test on a state move us closer
+to the final solution. We generate the list of outcomes of the state-test
+combination and check whether all resulting state outcomes are strictly
+less than the original state (closer to the final solution).
+
+We use the higher-order function `all` from Prelude which accepts a
+function (a->Bool)  and a list, and applies the function on every element
+of the list.  If all returned booleans are true `all` returns True, otherwise
+it returns False. The function applied to each outcome is `(<s)` shorthand
+for `(\x -> x < s)`.
 
 
 Tests
 -----
 
-Tests returns a list of all productive weighings for a State s.
-With `weighings` as well as `productive` implemented, this function
-becomes trivial: we simply get all weighings then filter out all those
-deemed unproductive.
-
 > tests :: State -> [Test]
 > tests s = filter (productive s) $ weighings s
 
-TODO: mention that we can do this because of currying.
-Was it currying? Check.
+The function returns a list of all productive weighings for a State s.
+It is straightforward to implement given `productive` and `weighings` above;
+we simply generate all weighings for the state s then filter out all those
+deemed unproductive using the function `productive`.
+
+Function currying allows us to simplify `filter (\w -> productive s w) $ weighings s`
+to the above.
+
 
 4. Decision trees
 =================
