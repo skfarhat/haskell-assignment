@@ -388,46 +388,24 @@ outright wrong states such as `(Pair 0 0)` and `Triple (1 0 1)` return true even
 Height
 ------
 
-To return the height of the tree, we simply return 1 + the maximum height
-of each of its child subtrees. So we,
-
-1) apply the function height on each of the node's subtrees: map height children
-2) return 1 + the maximum of height returned from the children:
-`1 + maximum (map height children)`.
-
-As with all recursive functions, we need a base case to terminate at,
-this happens when we reach a Stop node whose height is zero.
-
 > height :: Tree -> Int
 > height (Stop _) = 0
 > height (Node _ children) = 1 + maximum (map height children)
+
+Trees are recursive data-structures in nature, hence it is unsurprising that most functions that operate on them are also recursive.
+
+To calculate the height of a Node, we add one to the maximum height from the heights of child nodes. To compute the heights of child nodes we apply height on each using the standard `map` function. As with all recursive functions, we define the base case to be height zero for leaf nodes: `Stop`.
 
 
 MinHeight
 ---------
 
-Next we define a function `minHeight` to return the tree with the minimum height.
-
-We use the higher-order function `minimumBy` which accepts a comparator function
-telling it how to compare two elements, and a list of elements from which the minimum
-will be returned.
-
-Our where function defines the comparator `treeCmp` which given two tree instances,
-returns LT, EQ, or GT based on which has the shorter/longer height.
-
 > minHeight :: [Tree] -> Tree
 > minHeight = minimumBy treeCmp
-> 		where treeCmp t1 t2 = height t1 `compare` height t2
+>     where treeCmp t1 t2 = height t1 `compare` height t2
 
-We could have defined minimumBy ourselves:
+Given a list of trees, the function `minHeight` returns the tree with the shortest height. The function is easily implemented using `minimumBy` (imported from Data.List) which accepts a comparator function telling it how to compare two Tree objects. We define our tree comparison function in the _where_ clause. Comparing two trees is essentially comparing their heights hence the implementation.
 
-TODO: explain what our own implementation is.
-
-> -- minHeight' :: [Tree] -> Tree
-> -- minHeight' trees = trees !! (fromJust $ elemIndex smallest)
-> -- 		where smallest = minimum $ map height trees
-
-that returns the tree of minimum height from a non-empty list of trees.
 
 MkTree
 ------
@@ -440,31 +418,26 @@ MkTree
 >         testList = tests s
 >         test2Tree t = Node t $ map mktree $ outcomes s t
 
+We describe our implementation of the function `mkTree` by addressing each sentence from the coversheet question separately.
 
-The function can be implemented by taking each segment from the statement
-and writing the functional code addressing it:
+__"Stop if s is final"__
 
-_Stop if s is final_
-Our guard statement
-| final s = Stop s
-handles this. This is the base case for the recursive `mktree` function.
+The base case for our recursive function, handled on the first line of the guard statement. `final s = Stop s`
 
-_otherwise generate all possible productive tests with tests s_
+__"Otherwise generate all possible productive tests with tests s"__
+
 `testList = tests s`
 
-_recursively build trees from the outcomes of each such test_
-We create a function test2Tree which, given a test `t` and the state s
-  (through the scope) constructs and returns a node with arguments:
-  1. the test `t`
-  2. a list of trees each built from one of the outcomes of test `t` on state `s`.
-    We apply the function `mktree` (recursively) on each outcome ending up with:
-    `map mktree $ outcomes s t`
-And the overall function `test2Tree t = Node t $ map mktree $ outcomes s t`
+__"Recursively build trees from the outcomes of each such test"__
 
-_pick the one that yields the best tree overall._
-Finally we glue the different components together@
-  - apply `test2Tree` to each test in testList, this returns a list
-  - return the tree with the shortest height from the above list
+We create a function test2Tree which, given a test `t` and the state `s`
+(through the scope) constructs and returns a node with arguments:
+(1) the test `t`, (2) a list of trees, each built from one of the outcomes of the test `t` on state `s`. The building of those subtrees is accomplished by applying `mktree` on each outcome: `map mktree $ outcomes s t`.
+Hence, `test2Tree = Node t $ map mktree $ outcomes s t`
+
+__"Pick the one that yields the best tree overall"__
+
+This where all components are combined. We extract the minimum-height from the list resulting from `test2Tree` being applied to each test in `testList`.
 
 
 5. Caching heights
