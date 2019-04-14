@@ -651,7 +651,6 @@ With `mktrees` defined, it is possible to simplify the definition of `mktree`:
 
 > mktree' = head . mktrees
 
---------------------------------------------------------
 
 MkTreeG
 --------

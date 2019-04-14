@@ -322,29 +322,44 @@ $for(bibliography)$
 $endfor$
 $endif$
 
-$if(title)$
-\title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
-$endif$
-$if(subtitle)$
-\providecommand{\subtitle}[1]{}
-\subtitle{$subtitle$}
-$endif$
-$if(author)$
-\author{$for(author)$$author$$sep$ \and $endfor$}
-$endif$
-$if(institute)$
-\providecommand{\institute}[1]{}
-\institute{$for(institute)$$institute$$sep$ \and $endfor$}
-$endif$
-\date{$date$}
-$if(beamer)$
-$if(titlegraphic)$
-\titlegraphic{\includegraphics{$titlegraphic$}}
-$endif$
-$if(logo)$
-\logo{\includegraphics{$logo$}}
-$endif$
-$endif$
+% $if(title)$
+% \title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
+% $endif$
+% $if(subtitle)$
+% \providecommand{\subtitle}[1]{}
+% \subtitle{$subtitle$}
+% $endif$
+% $if(author)$
+% \author{$for(author)$$author$$sep$ \and $endfor$}
+% $endif$
+% $if(institute)$
+% \providecommand{\institute}[1]{}
+% \institute{$for(institute)$$institute$$sep$ \and $endfor$}
+% $endif$
+% \date{$date$}
+% $if(beamer)$
+% $if(titlegraphic)$
+% \titlegraphic{\includegraphics{$titlegraphic$}}
+% $endif$
+% $if(logo)$
+% \logo{\includegraphics{$logo$}}
+% $endif$
+% $endif$
+
+% ==================================================================
+% CUSTOM SETTINGS
+% ==================================================================
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=20pt}
+
+% Inline code
+\usepackage{fancyvrb,newverbs,xcolor}
+\definecolor{Light}{HTML}{F4F4F4}
+\let\oldtexttt\texttt
+\renewcommand{\texttt}[1]{
+  \colorbox{Light}{\oldtexttt{#1}}
+}
+
 
 \begin{document}
 
