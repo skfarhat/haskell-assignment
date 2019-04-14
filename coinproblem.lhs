@@ -126,8 +126,8 @@ For the Pair-TPair case:
 
 When the pans balance (middle outcome), we know that all coins currently on
 the scale are genuine. The previously unknown `a` and `c` are now genuine.
-Hence the remaining number of unknown coins is the original `u` minus `us=(a+c)`,
-and the total number of genuine coins increases by us `g+us`.
+Hence the remaining number of unknown coins is the original `u` minus `us=(a + c)`,
+and the total number of genuine coins increases by us `g + us`.
 
 When the scale tips to one side (left and right outcomes), the next state is
 a Triple, hence the use of `mkTriple`. We know there's a counterfeit coin but
@@ -140,10 +140,10 @@ Concretely, in the left outcome `(a,b) < (c,d)`, we move:
   - `a` to the light pile `l`
   - `c` to the heavy pile `h`
   - all unknown coins that did not take part in the test to the genuine
-    pile leaving us with `Triple a c (g+u-us)`
+    pile leaving us with `Triple a c (g + u - us)`
 
 The right outcome `(a,b) > (c,d)` is symmetric to the left one with `a` and `c`
-swapping places: `Triple c a (g+u-us)`
+swapping places: `Triple c a (g + u - us)`
 
 **Sanity check**
 The total number of coins in the left and right outcomes is:
@@ -198,11 +198,20 @@ Weighings
 
 __Pair Case__
 
+> weighings (Pair u g) = [
+>     TPair (a, b) (a + b, 0)
+>       | a <- [0..m],
+>         b <- [0..g],
+>         a + b /= 0,
+>         2 * a + b <= u
+>     ]
+>   where m = u `div` 2
+
 We have the following constraints:
 
-1. Both pans must have the same number of coins: `a + b = c + d`
-2. One of the pans must not have genuine coins: `b * d = 0`
-3. Only the lexically smaller of symmetrical weighings is returned
+1) Both pans must have the same number of coins: `a + b = c + d`
+2) One of the pans must not have genuine coins: `b * d = 0`
+3) Only the lexically smaller of symmetrical weighings is returned
    e.g. return the former of `TPair (0,1) (1,0)` and `TPair (1,0) (0,1)`
 
 __The conditions are only satisfied if `d == 0`. Why?__
@@ -211,7 +220,7 @@ It can be proven through contradiction, let us assume `d /= 0`.
 From (2), we have `b = 0` and (1) becomes `a = c + d` implying `a > c`
 because `d > 0` (remember d cannot be negative), but this contradicts (3)
 therefore d is not non-zero, `d` is zero.
-Consequently, `a + b = c` and `TPair (a,b) (c,d)` simplifies to `TPair (a,b) (a+b,0)`.
+Consequently, `a + b = c` and `TPair (a,b) (c,d)` simplifies to `TPair (a,b) (a + b,0)`.
 The implementation boils down to a list comprehension that filters out candidates
 violating any of the below conditions:
 
@@ -225,49 +234,23 @@ Assume `a = m + 1`.
 When u is even, `u div 2 = u / 2`:
 ```
   a  = m + 1
-  a  = u/2 + 1
+  a  = u / 2 + 1
   2a = u + 2
   2a > u        (impossible)
 ```
 
 When u is odd, `u div 2 = (u-1)/2`:
 ```
-  m     = (u-1)/2
-  m + 1 = (u-1)/2 + 1
-  a     = (u+1)/2
-  2a    = u+1
+  m     = (u - 1) / 2
+  m + 1 = (u - 1) / 2 + 1
+  a     = (u + 1) / 2
+  2a    = u + 1
   2a    > u        (impossible)
 ```
 
 TODO: consider beautifying the equations here (latex manner).
 
-The TPair case is:
-
-> weighings (Pair u g) = [
->     TPair (a, b) (a + b, 0)
->       | a <- [0..m],
->         b <- [0..g],
->         a + b /= 0,
->         2 * a + b <= u
->     ]
->   where m = u `div` 2
-
 __Triple Case__
-
-This case is trickier and requires the subsidiary `choices` defined further below.
-(ghci does not allow us to intersperse weighings and choices definitions). We perform
-the Cartesian product of the set `choices k (l,h,g)` with itself filtering out
-TTrip combinations that do not satisfy the below conditions:
-
-- `c * f        = 0`
-- `a + b + c    == d+e+f`
-- `b + e        <= h`
-- `c + f        <= g`
-- `a + d        <= l`
-- `show (a,b,c) <= show (d,e,f)`
-
-Note that the set `choices k (l, h, g)` is generated once only and stored
-in 'ch' to avoid redundant calls.
 
 > weighings (Triple l h g) = [
 >     TTrip (a,b,c) (d,e,f)
@@ -284,7 +267,25 @@ in 'ch' to avoid redundant calls.
 >     ]
 >     where kr = (l + h + g) `div` 2
 
-The `choices` function returns all possible combinations of `l, h, g` given a number
+This case is trickier and requires the subsidiary `choices` defined further below.
+(ghci does not allow us to intersperse weighings and choices definitions). We perform
+the Cartesian product of the set `choices k (l,h,g)` with itself filtering out
+TTrip combinations that do not satisfy the below conditions:
+
+- `c * f        = 0`
+- `a + b + c    == d + e + f`
+- `b + e        <= h`
+- `c + f        <= g`
+- `a + d        <= l`
+- `show (a,b,c) <= show (d,e,f)`
+
+Note that the set `choices k (l, h, g)` is generated once only and stored
+in 'ch' to avoid redundant calls.
+
+Choices
+-------
+
+The function returns all possible combinations of `l, h, g` given a number
 of coins `k`.
 
 > choices :: Int -> (Int, Int, Int) -> [(Int, Int, Int)]
@@ -456,33 +457,25 @@ TreeH2tree
 
 > treeH2tree :: TreeH -> Tree
 > treeH2tree (StopH s) = Stop s
-> treeH2tree (NodeH h t ts) = Node t $ map treeH2tree ts
+> treeH2tree (NodeH _ t ts) = Node t $ map treeH2tree ts
+
+We handle each TreeH instance separately. A `StopH` node is straightforwardly converted to `Stop` node; they have the same arguments, so not much to be said here.
+
+The height value in `NodeH` is dropped from the `Node` (see `_` on third line). We construct a `Node` passing to it the test `t` from `NodeH` then by  by recrusively converting each of its children `ts` to a Tree using `map`:  `treeH2tree (NodeH h t ts) = Node t $ map treeH2tree ts`
 
 TODO: check whether it is node-type/instance?
-
-We use pattern matching to detect the node type here.
-
-For a StopH node, we return the equivalent Stop node (they both have the same state),
-so `treeH2tree (StopH s) = Stop s`
-
-For a NodeH node, we convert it to Node dropping the cached height,
-and then calling treeH2tree on each of its child nodes:
-`treeH2tree (NodeH h t ts) = Node t $ map treeH2tree ts`
 
 
 NodeH
 ------
 
 > nodeH :: Test -> [TreeH] -> TreeH
-> nodeH t children = NodeH h t children
->   where h = 1 + maximum (map heightH children)
+> nodeH t ts = NodeH h t ts
+>   where h = 1 + maximum (map heightH ts)
 
-This is the crucial differentiator between Tree and TreeH.
-When creating a NodeH, we label it with its height to avoid
-repetitive computations later on.
-
-The height of a node is one plus the maximum height of it children
-`h = 1 + maximum $ map heightH children`.
+The smart-constructor `nodeH` allows us to create a `NodeH` by passing the test `t` and its child nodes `ts` without worrying about computing the height of the node ourselves. As such, the smart-constructor will compute the height once upon creation.
+The height of a node is one plus the maximum height of it children `ts`
+`h = 1 + maximum $ map heightH ts`.
 
 
 Tree2treeH
@@ -490,38 +483,60 @@ Tree2treeH
 
 > tree2treeH :: Tree -> TreeH
 > tree2treeH (Stop s) = StopH s
-> tree2treeH (Node t children) = nodeH t $ map tree2treeH children
+> tree2treeH (Node t ts) = nodeH t $ map tree2treeH ts
 
 Again we use pattern matching to detect the node type here.
 
-For a Stop node, we return the equivalent StopH node with the same state.
+For a (Stop s) node, we return the equivalent StopH node with the same state.
 
-For a (Node t children), we apply the function `tree2treeH` on all of its children
-(recursion) and the result is a list of TreeHs. At this point we just call our
-smart-constructor passing the test `t` and the list of TreeHs. The smart-constructor
-takes care of computing the height and returning a NodeH.
-That's the point of 'smart-constructor' it does the dirty-work of this function.
+For a (Node t ts), we apply the function `tree2treeH` on all of its children (recursion) and the result is a list of TreeHs. At this point we just call our smart-constructor passing the test `t` and the list of TreeHs. The smart-constructor takes care of computing the height and returning a NodeH.
+The smart constructor is most useful here as it simplifies the implementation of `tree2treeH`.
 
-TODO: convince yourself that heightH . tree2treeH = height
 
-```
+__"Convince yourself that heightH . tree2treeH = height"__
+
+
+For (Stop s):
+
+```haskell
+
 height (Stop s) = 0
-(heightH . tree2treeH) $ Stop s = heightH (tree2treeH $ Stop s)
-                                = heightH (StopH s)
-                                = 0         -- matches the pattern in heightH)
-```
 
 ```
-(heightH . tree2treeH) $ Node t children
-= heightH (tree2treeH $ Node t [N1, N2, N3])                                  -- tree2treeH applied on (Node t children)
-= heightH (nodeH t $ map tree2treeH [N1, N2, N3])                             -- unwind the function tree2treeH
-= heightH (NodeH (1 + maximum $ map heightH [N1, N2, N3])                     -- unwind the function nodeH
-= heightH (NodeH (1 + maximum $ [(heightH N1), (heightH N2), (heightH N3)])   -- apply map to each element in the list
 
-Since (heightH (NodeH h t c)) = h
-the above simplifies to
+and
 
-= (1 + maximum [(heightH N1), (heightH N2), (heightH N3)])
+```haskell
+
+(heightH . tree2treeH) $ Stop s
+  -- apply tree2treeH to (Stop s)
+  = heightH (tree2treeH $ Stop s)
+  -- matches pattern in tree2treeH
+  = heightH (StopH s)
+  -- matches pattern in heightH
+  = 0
+```
+
+For (Node t ts):
+
+```haskell
+
+(heightH . tree2treeH) $ Node t ts
+-- tree2treeH applied on (Node t ts)
+= heightH (tree2treeH $ Node t [n1, n2, n3])
+
+-- unwind the function tree2treeH
+= heightH (nodeH t $ map tree2treeH [n1, n2, n3])
+
+-- unwind the function nodeH
+= heightH (NodeH (1 + maximum $ map heightH [n1, n2, n3])
+
+-- apply map to each element in the list
+= heightH (NodeH (1 + maximum $ [(heightH n1), (heightH n2), (heightH n3)])
+
+-- since (heightH (NodeH h t c)) = h, the above simplifies to
+= (1 + maximum [(heightH n1), (heightH n2), (heightH n3)])
+
 ```
 
 which is effectively the same as the implementation of height, which when unwound
@@ -535,32 +550,16 @@ becomes:
 MkTreeH
 -------
 
-With the function `tree2treeH` we can very simply implement `mktreeH` as
-the composition of `tree2treeH` with `mktree`.
-
 > mktreeH :: State -> TreeH
 > mktreeH = tree2treeH . mktree
 
-It is also possible to implement mktreeH similarly to `mktree` replacing:
+The function is merely the composition of `tree2treeH` with `mktree`. The latter is first applied returning a `Tree`, and the former converts that `Tree` to a `TreeH`.
 
-* Stop with StopH
-* height with heightH
-* Node constructor with the smart-constructor `nodeH`
+We can also implement mktreeH from the ground up as we did `mktree` replacing:
 
-Conceptually, `mktreeH'` below should perform better than `mktreeH` since the latter,
-builds an entire Tree and then converts it to TreeH, whereas the former just builds
-it once. Testing the performance difference however does not yield sufficiently
-convincing improvements:
-
-: set +s
-: mktreeH  (Pair 8 0) --> (7.25 secs, 5,331,468,040 bytes)
-: mktreeH' (Pair 8 0) --> (7.02 secs, 5,263,940,664 bytes)
-
-: mktreeH  (Pair 9 0) --> (41.80 secs, 31,342,052,720 bytes)
-: mktreeH'  (Pair 9 0) --> (41.24 secs, 30,946,184,648 bytes)
-
-Additionally, as has been pointed out in the course, program performance is
-not an evaluation criteria.
+- Stop with StopH
+- height with heightH
+- Node constructor with the smart-constructor `nodeH`
 
 > mktreeH' s
 >   | final s = StopH s
@@ -570,11 +569,24 @@ not an evaluation criteria.
 >       test2Tree t = nodeH t (map mktreeH' $ outcomes s t)
 >       minHeightH = minimumBy (\t1 t2 -> heightH t1 `compare` heightH t2)
 
+We expect `mktreeH'` to generate the tree quicker than `mktreeH` since the latter builds an entire Tree before fully converting it to a `TreeH¦, whereas the former builds it on its first pass once. However, performance testing does not show significant improvements of `mktreeH'` over `mktreeH`:
+
+```haskell
+
+: set +s
+: mktreeH  (Pair 8 0) --> (7.25 secs, 5,331,468,040 bytes)
+: mktreeH' (Pair 8 0) --> (7.02 secs, 5,263,940,664 bytes)
+
+: mktreeH  (Pair 9 0) --> (41.80 secs, 31,342,052,720 bytes)
+: mktreeH'  (Pair 9 0) --> (41.24 secs, 30,946,184,648 bytes)
+
+```
+
 
 6. A greedy solution
 ====================
 
-Optimal copied from the coversheet.
+Optimal copied from the coversheet:
 
 > optimal :: State -> Test -> Bool
 > optimal (Pair u g) (TPair (a, b) (ab, 0))
@@ -595,31 +607,15 @@ BestTests
 > bestTests :: State -> [Test]
 > bestTests s = filter (optimal s) $ weighings s
 
-The function `bestTests` filters out all non-optimal weighings for the provided
-state `s`. It generates the list `weighings s` (see right end of the function)
-and applies the function `(optimal s)` on each element in the list keeping only
-the optimal ones (those for which `optimal s w = True`).
+We generate the best tests for state s by filtering out all non-optimal weighings of `s` using the `filter` function. The curried function `optimal s` is applied to each weighing and when the result is true, the weighing is kept and returned in the final list.
 
-Note that `optimal s` can have been written in lambda terms which would
-be more readable for the non-seasoned readers:
-`filter (\w -> optimal s w) $ weighings s`
+Mktrees
+-------
 
-but `optimal s` is prettier and we stick with it.
+As the implementation of `optimal` is not well understood, it is
+difficult to prove or test for the correctness of `bestTests`. We can, however, compare its results to those returned by our other `mktree` functions defined in previous sections assuming, of course, they are correct. The impediment to this is that our `mktree` functions return one of many optimal trees, instead of the full list of optimal trees.
 
-Since the exact implementation of `optimal` is not as well understood, it is
-difficult to postulate its correctness; we can however compare its returned results
-with those obtained from functions implemented in the higher up sections.
-
-Evidently, if our earlier functions are wrong then our checks below mean nothing.
-
-We would check whether all elements in `bestTests (Pair 8 0)` are actually the roots
-of minimum trees generated by `mktree `or `mktreeH`. The obstacle to this is that
-`mktree` will return one of the minimum height trees (more specifically the
-first such min tree), but we would like the entire list of such trees.
-
-We can create `mktrees`:
-
-(TODO: maybe mktrees implementation can be improved below?)
+Hence we define `mktrees` below, inspired by `mktree`. The function computes the full list of trees, determines the minimum-height tree and then filters the list for all trees matching that minimum height `h`.
 
 > mktrees :: State -> [Tree]
 > mktrees s
@@ -630,7 +626,9 @@ We can create `mktrees`:
 >       allTrees = map test2Tree (tests s)
 >       test2Tree t = Node t $ map mktree $ outcomes s t
 
-We also write a function that allows us to extract a test from a tree node.
+(TODO: maybe mktrees implementation can be improved below?)
+
+We also write a getter function to extract a test from a Tree node.
 Note that the function call will fail if it is provided a Stop node.
 
 > getTest :: Tree -> Test
@@ -640,16 +638,16 @@ Note that the function call will fail if it is provided a Stop node.
 > getTestH (NodeH _ t _) = t
 
 
-We can then run:
+We then run the below equality check which _suggests_ `bestTests` does return optimal trees.
 
-s3 = Pair 8 0
-map getTest (mktrees s3) == bestTests s3
+```haskell
 
-which returns True.
+st = Pair 8 0
+map getTest (mktrees st) == bestTests st
 
-Of course this does not prove the correctness of anything, but helps increase
-confidence. A final note, if mktrees was somehow deemed useful and needed
-to be kept in the implementation, we could reimplement mktree with mktree':
+```
+
+With `mktrees` defined, it is possible to simplify the definition of `mktree`:
 
 > mktree' = head . mktrees
 
@@ -669,22 +667,14 @@ MkTreeG
 The structure of our function `mktreeG` is not too dissimilar to that of `mktree`.
 
 For a given list of tests, generate the outcomes and create tree nodes from
-those outcomes. The difference here is that `bestTest` returns optimal tests
-(ones that are guaranteed to lead to short trees) whereas in `mktree` we had
-to generate all trees, compute their heights and pick the shortest.
-Since `bestTests` returns a list of optimal tests, we can pick whichever and
-create a decision tree from it (we pick the first using `head`).
+those outcomes. The difference here is that `bestTest` returns optimal tests from the outset (ones that are guaranteed to lead to the shortest trees) whereas `mktree` computed the trees for all productive tests before picking the shortest. Since `bestTests` returns a list of optimal tests, we pick any element in the list e.g. `head`.
 
-To quickly go through the function again:
+In summary the function is structured as follows:
 
-1) If the state is final, generate a leaf: StopH
-2) otherwise, create a nodeH using our smart-constructor.
-   The smart constructor takes in
-   a) a test which is `bestTest`: the first optimal test we find
-   b) a list of child nodes, which are all roots to decision trees representing
-      the outcome states that resulted from `outcomes s bestTest`
-      These child decision trees are created recursively (`mktreeG`) call
-      on each outcome state.
+1) If the state is final, generate and return a leaf `StopH`
+2) Otherwise, create a nodeH using our smart-constructor accepting:
+  a) The first optimal test returned from `bestTests`: `bestTest`
+  b) A list of trees constructed by applying `mktreeG` on the state outcomes resulting from `bestTest` applied on the state `s`.
 
 MktreesG
 --------
@@ -693,18 +683,20 @@ MktreesG
 > mktreesG s = map test2Tree $ bestTests s
 >   where test2Tree t = nodeH t (map mktreeG $ outcomes s t)
 
-The above `mktreesG`, creates a tree for each optimal test coming out of
-`bestTests s`: it is clear since `mktreesG` merely applies test2Tree to each
-element in `bestTests s`. The function `test2Tree` creates a node from the
-provided test `t`: to create a tree we pass the test to the smart-constructor
-nodeH, then create a tree from each outcome of that test on the state `s`.
+Contrasted to `mktreeG`, this function returns the full list of optimal trees without cherry-picking the first optimal test in `bestTests`. It creates a `TreeH` using `mktreeG` from every outcome of every optimal test on the state `s`.
 
-(Recall that Data.List.nub removes duplicates from a list. Hence, all those
-trees have height 3.) How many minimum-height decision trees are there for n = 12?
+__"How many minimum-height decision trees are there for n = 12?"__
+
+
+```haskell
 
 One only:
 CoinProblem> length $ mktreesG (Pair 12 0)
 1
+
+```
+
+```haskell
 
 CoinProblem> mktreesG (Pair 12 0)
 [NodeH 3 (TPair (4,0) (4,0)) [
@@ -739,7 +731,6 @@ CoinProblem> map getTestH $ mktreesG (Pair 12 0)
 CoinProblem> (map getTest $ mktrees (Pair 8 0 )) == (map getTestH $ mktreesG (Pair 8 0))
 True
 
+```
 
-* TODO: consistent plus/minuses in the writeup
-* TODO: be consistent with usage of pan and bucket
 * TODO: consider being harsher on the 80 chars rule (maybe there's an online tool?)
