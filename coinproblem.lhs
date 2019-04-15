@@ -496,8 +496,6 @@ it the test `t` from `NodeH` then by  by recrusively converting each
 of its children `ts` to a Tree using `map`:
 `treeH2tree (NodeH h t ts) = Node t $ map treeH2tree ts`
 
-TODO: check whether it is node-type/instance?
-
 
 NodeH
 ------
@@ -680,10 +678,8 @@ then filters the list for all trees matching that minimum height `h`.
 >   | otherwise = filter (\t -> h == height t) allTrees
 >     where
 >       h = height $ minHeight allTrees
->       allTrees = map test2Tree (tests s)
+>       allTrees = map test2Tree $ tests s
 >       test2Tree t = Node t $ map mktree $ outcomes s t
-
-(TODO: maybe mktrees implementation can be improved below?)
 
 We also write a getter function to extract a test from a Tree node.
 Note that the function call will fail if it is provided a Stop node.
@@ -817,5 +813,3 @@ CoinProblem> (map getTest $ mktrees (Pair 8 0 )) == (map getTestH $ mktreesG (Pa
 True
 
 ```
-
-* TODO: consider being harsher on the 80 chars rule (maybe there's an online tool?)
