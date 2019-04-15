@@ -769,21 +769,39 @@ CoinProblem> mktreesG (Pair 12 0)
 [NodeH 3 (TPair (4,0) (4,0)) [
   NodeH 2 (TTrip (0,2,1) (1,2,0))
     [
-    NodeH 1 (TTrip (0,0,1) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 0 1 11),StopH Invalid],
-    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),StopH (Triple 1 0 11),StopH (Triple 1 0 11)],
-    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 1 0 11),StopH (Triple 0 1 11)]
+    NodeH 1 (TTrip (0,0,1) (0,1,0)) [StopH (Triple 0 1 11),
+                                     StopH (Triple 0 1 11),
+                                     StopH Invalid],
+    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),
+                                     StopH (Triple 1 0 11),
+                                     StopH (Triple 1 0 11)],
+    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),
+                                     StopH (Triple 1 0 11),
+                                     StopH (Triple 0 1 11)]
     ],
   NodeH 2 (TPair (0,3) (3,0))
     [
-    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 0 1 11),StopH (Triple 0 1 11)],
-    NodeH 1 (TPair (0,1) (1,0)) [StopH (Triple 0 1 11),StopH (Pair 0 12),StopH (Triple 1 0 11)],
-    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),StopH (Triple 1 0 11),StopH (Triple 1 0 11)]
+    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),
+                                     StopH (Triple 0 1 11),
+                                     StopH (Triple 0 1 11)],
+    NodeH 1 (TPair (0,1) (1,0))     [StopH (Triple 0 1 11),
+                                     StopH (Pair 0 12),
+                                     StopH (Triple 1 0 11)],
+    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),
+                                     StopH (Triple 1 0 11),
+                                     StopH (Triple 1 0 11)]
     ],
   NodeH 2 (TTrip (0,2,1) (1,2,0))
     [
-    NodeH 1 (TTrip (0,0,1) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 0 1 11),StopH Invalid],
-    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),StopH (Triple 1 0 11),StopH (Triple 1 0 11)],
-    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),StopH (Triple 1 0 11),StopH (Triple 0 1 11)]
+    NodeH 1 (TTrip (0,0,1) (0,1,0)) [StopH (Triple 0 1 11),
+                                     StopH (Triple 0 1 11),
+                                     StopH Invalid],
+    NodeH 1 (TTrip (1,0,0) (1,0,0)) [StopH (Triple 1 0 11),
+                                     StopH (Triple 1 0 11),
+                                     StopH (Triple 1 0 11)],
+    NodeH 1 (TTrip (0,1,0) (0,1,0)) [StopH (Triple 0 1 11),
+                                     StopH (Triple 1 0 11),
+                                     StopH (Triple 0 1 11)]
     ]
   ]
 ]
